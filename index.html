@@ -4738,6 +4738,14 @@
       rebuildSlides();
     }
 
+    function setManualFontSize(value) {
+      if (state.autoFit) {
+        state.autoFit = false;
+        els.autoFit.checked = false;
+      }
+      setFontSize(value);
+    }
+
     function getDisplayFontSize(slide) {
       if (!state.autoFit) return state.fontSize;
       return findLargestFittingFontSize(slide, fontSizing.min, fontSizing.autoMax);
@@ -4781,8 +4789,6 @@
     function setAutoFit(enabled) {
       state.autoFit = enabled;
       els.autoFit.checked = enabled;
-      els.fontSize.disabled = enabled;
-      els.fontSizeNumber.disabled = enabled;
       if (!enabled) state.fontSize = state.manualFontSize;
       rebuildSlides();
     }
@@ -4882,8 +4888,8 @@
         if (event.target === els.importDialog) closeImportPreview();
       });
       els.autoFit.addEventListener("change", event => setAutoFit(event.target.checked));
-      els.fontSize.addEventListener("input", event => setFontSize(event.target.value));
-      els.fontSizeNumber.addEventListener("change", event => setFontSize(event.target.value));
+      els.fontSize.addEventListener("input", event => setManualFontSize(event.target.value));
+      els.fontSizeNumber.addEventListener("change", event => setManualFontSize(event.target.value));
       els.openDisplay.addEventListener("click", openDisplay);
       els.prevSlide.addEventListener("click", () => go(-1));
       els.nextSlide.addEventListener("click", () => go(1));
