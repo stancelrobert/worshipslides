@@ -5384,7 +5384,10 @@
     function init() {
       refreshSongOptions();
 
-      els.songSearch.addEventListener("focus", showSongResults);
+      els.songSearch.addEventListener("focus", () => {
+        showSongResults();
+        els.songSearch.select();
+      });
       els.songSearch.addEventListener("input", () => {
         state.songResultIndex = 0;
         showSongResults();
