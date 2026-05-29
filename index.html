@@ -5229,11 +5229,12 @@
 
     function getSongMatches(query) {
       const normalizedQuery = normalizeSearch(query.trim());
-      if (!normalizedQuery) return songs.map((song, index) => ({ song, index }));
-
-      return songs
+      const items = songs
         .map((song, index) => ({ song, index, title: normalizeSearch(song.title) }))
-        .filter(item => item.title.includes(normalizedQuery));
+        .sort((a, b) => a.title.localeCompare(b.title));
+
+      if (!normalizedQuery) return items;
+      return items.filter(item => item.title.includes(normalizedQuery));
     }
 
     function renderSongResults(query = els.songSearch.value) {
