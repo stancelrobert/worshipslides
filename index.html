@@ -4855,11 +4855,84 @@
       const slides = [];
 
       for (const section of getSongSections(song)) {
-        const lines = section.lines.filter(line => line.trim());
+        const lines = section.lines
+          .filter(line => line.trim())
+          .flatMap(line => balanceLyricLine(line, measure));
         slides.push(...splitLinesToSlides(lines, measure, maxHeight, fontSize));
       }
 
       return slides.length ? slides : [""];
+    }
+
+    function balanceLyricLine(line, measure) {
+      const maxWidth = getMeasureWidth(measure);
+      if (!measure || !maxWidth || getTextWidth(line, measure) <= maxWidth) return [line];
+      return splitTextBalanced(line, measure, maxWidth);
+    }
+
+    function splitTextBalanced(text, measure, maxWidth) {
+      if (getTextWidth(text, measure) <= maxWidth) return [text];
+
+      const words = text.trim().split(/\s+/);
+      if (words.length <= 1) return [text];
+
+      let best = null;
+      for (let index = 1; index < words.length; index += 1) {
+        const left = words.slice(0, index).join(" ");
+        const right = words.slice(index).join(" ");
+        const leftWidth = getTextWidth(left, measure);
+        const rightWidth = getTextWidth(right, measure);
+        if (leftWidth > maxWidth || rightWidth > maxWidth) continue;
+
+        const score = Math.abs(leftWidth - rightWidth);
+        if (!best || score < best.score) best = { index, score };
+      }
+
+      if (!best) {
+        const firstLine = takeFittingWords(words, measure, maxWidth);
+        return [
+          words.slice(0, firstLine).join(" "),
+          ...splitTextBalanced(words.slice(firstLine).join(" "), measure, maxWidth)
+        ];
+      }
+
+      return [
+        words.slice(0, best.index).join(" "),
+        words.slice(best.index).join(" ")
+      ];
+    }
+
+    function takeFittingWords(words, measure, maxWidth) {
+      let count = 1;
+      for (let index = 1; index <= words.length; index += 1) {
+        if (getTextWidth(words.slice(0, index).join(" "), measure) <= maxWidth) {
+          count = index;
+        } else {
+          break;
+        }
+      }
+      return count;
+    }
+
+    function getMeasureWidth(measure) {
+      if (!measure) return 0;
+      return parseFloat(measure.style.width) || measure.getBoundingClientRect().width;
+    }
+
+    function getTextWidth(text, measure) {
+      const previousText = measure.textContent;
+      const previousWidth = measure.style.width;
+      const previousWhiteSpace = measure.style.whiteSpace;
+
+      measure.textContent = text;
+      measure.style.width = "max-content";
+      measure.style.whiteSpace = "pre";
+      const width = measure.scrollWidth;
+
+      measure.textContent = previousText;
+      measure.style.width = previousWidth;
+      measure.style.whiteSpace = previousWhiteSpace;
+      return width;
     }
 
     function getSongSections(song) {
@@ -4912,8 +4985,8 @@
     function render() {
       const song = songs[state.songIndex];
       const activeSlide = state.slides[state.slideIndex] || "";
-      const slide = state.isBlank ? "" : activeSlide;
       const displayFontSize = getDisplayFontSize(activeSlide);
+      const slide = state.isBlank ? "" : formatSlideText(activeSlide, displayFontSize);
       syncPreviewLayout();
       els.songTitle.textContent = song.title;
       els.songMeta.textContent = song.author;
@@ -4939,8 +5012,17 @@
       els.displayStatus.textContent = displayDoc ? "Display open" : "Display closed";
       if (!displayDoc) return;
       const slideEl = displayDoc.getElementById("slide");
-      slideEl.textContent = slide;
+      slideEl.textContent = formatSlideText(slide, fontSize);
       slideEl.style.fontSize = `${fontSize}px`;
+    }
+
+    function formatSlideText(slide, fontSize) {
+      if (!slide) return "";
+      const { measure } = getMeasureContext(fontSize);
+      return slide
+        .split("\n")
+        .flatMap(line => balanceLyricLine(line, measure))
+        .join("\n");
     }
 
     function renderSlideGallery() {
