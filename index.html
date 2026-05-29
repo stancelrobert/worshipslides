@@ -5045,8 +5045,9 @@
         frame.className = "slide-thumb-frame";
         content.className = "slide-thumb-content";
         text.className = "preview-text";
-        text.textContent = slide;
-        content.style.fontSize = `${getDisplayFontSize(slide)}px`;
+        const displayFontSize = getDisplayFontSize(slide);
+        text.textContent = formatSlideText(slide, displayFontSize);
+        content.style.fontSize = `${displayFontSize}px`;
         syncSlideLayout(content);
 
         content.append(text);
