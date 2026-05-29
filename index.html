@@ -180,6 +180,13 @@
     .stage-header h2 { font-size: 1.15rem; line-height: 1.25; margin: 0; }
     .stage-header p { color: var(--muted); margin: 4px 0 0; }
 
+    .stage-body {
+      display: grid;
+      gap: 0;
+      grid-template-columns: minmax(0, 1fr) 220px;
+      min-height: 0;
+    }
+
     .preview-wrap {
       display: grid;
       place-items: center;
@@ -232,6 +239,91 @@
 
     .preview-text {
       width: 100%;
+    }
+
+    .slide-gallery {
+      border-left: 1px solid var(--line);
+      background: #f8fafb;
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+      overflow: hidden;
+    }
+
+    .slide-gallery-header {
+      border-bottom: 1px solid var(--line);
+      color: var(--muted);
+      font-size: 0.82rem;
+      font-weight: 800;
+      padding: 12px 14px;
+      text-transform: uppercase;
+    }
+
+    .slide-gallery-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      min-height: 0;
+      overflow: auto;
+      padding: 12px;
+    }
+
+    .slide-thumb {
+      background: white;
+      border: 2px solid transparent;
+      border-radius: 8px;
+      color: var(--text);
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      padding: 8px;
+      text-align: left;
+    }
+
+    .slide-thumb:hover {
+      border-color: var(--line);
+    }
+
+    .slide-thumb[aria-current="true"] {
+      border-color: var(--accent);
+    }
+
+    .slide-thumb-label {
+      color: var(--muted);
+      font-size: 0.8rem;
+      font-weight: 800;
+    }
+
+    .slide-thumb-frame {
+      aspect-ratio: 16 / 9;
+      background: #050505;
+      border-radius: 6px;
+      color: white;
+      overflow: hidden;
+      position: relative;
+      width: 100%;
+    }
+
+    .slide-thumb-content {
+      align-items: center;
+      background: #050505;
+      color: white;
+      display: grid;
+      font-weight: 700;
+      height: 720px;
+      justify-items: center;
+      left: 50%;
+      line-height: var(--slide-line-height, 1.12);
+      overflow-wrap: anywhere;
+      padding: var(--slide-padding-y, 5%) var(--slide-padding-x, 5%);
+      position: absolute;
+      text-align: center;
+      top: 50%;
+      transform: translate(-50%, -50%) scale(var(--thumb-scale, 0.12));
+      transform-origin: center;
+      white-space: pre-wrap;
+      width: 1280px;
     }
 
     .hint { color: var(--muted); font-size: 0.9rem; line-height: 1.45; margin: 0; }
@@ -322,6 +414,19 @@
       .controls { position: static; }
       .stage { min-height: 62vh; }
       .stage-header { flex-direction: column; }
+      .stage-body { grid-template-columns: 1fr; }
+      .slide-gallery {
+        border-left: 0;
+        border-top: 1px solid var(--line);
+      }
+      .slide-gallery-list {
+        flex-direction: row;
+        overflow-x: auto;
+        overflow-y: hidden;
+      }
+      .slide-thumb {
+        flex: 0 0 170px;
+      }
       .dialog-footer { flex-direction: column-reverse; }
     }
   </style>
@@ -386,13 +491,19 @@
         </div>
         <p id="splitStatus">Waiting for lyrics</p>
       </header>
-      <div class="preview-wrap">
-        <div class="preview">
-          <div id="previewSlide" class="preview-slide">
-            <div id="previewText" class="preview-text empty">Select a song to start.</div>
+      <div class="stage-body">
+        <div class="preview-wrap">
+          <div class="preview">
+            <div id="previewSlide" class="preview-slide">
+              <div id="previewText" class="preview-text empty">Select a song to start.</div>
+            </div>
+            <div id="previewMeasure" class="measure-text"></div>
           </div>
-          <div id="previewMeasure" class="measure-text"></div>
         </div>
+        <aside class="slide-gallery" aria-label="Slide gallery">
+          <div class="slide-gallery-header">Slides</div>
+          <div id="slideGallery" class="slide-gallery-list"></div>
+        </aside>
       </div>
     </section>
   </main>
@@ -4341,7 +4452,8 @@
       splitStatus: document.getElementById("splitStatus"),
       previewSlide: document.getElementById("previewSlide"),
       previewText: document.getElementById("previewText"),
-      previewMeasure: document.getElementById("previewMeasure")
+      previewMeasure: document.getElementById("previewMeasure"),
+      slideGallery: document.getElementById("slideGallery")
     };
 
     function projectionHtml() {
@@ -4727,6 +4839,7 @@
       const splitFontSize = state.autoFit ? fontSizing.autoSplitSize : state.fontSize;
       state.slides = splitLyrics(song, splitFontSize);
       state.slideIndex = Math.min(state.slideIndex, state.slides.length - 1);
+      renderSlideGallery();
       render();
     }
 
@@ -4748,6 +4861,7 @@
         : `${state.slides.length} slide${state.slides.length === 1 ? "" : "s"} at ${state.fontSize}px`;
       els.prevSlide.disabled = state.slideIndex === 0;
       els.nextSlide.disabled = state.slideIndex >= state.slides.length - 1;
+      updateGallerySelection();
       renderDisplay(slide, displayFontSize);
     }
 
@@ -4758,6 +4872,54 @@
       const slideEl = displayDoc.getElementById("slide");
       slideEl.textContent = slide;
       slideEl.style.fontSize = `${fontSize}px`;
+    }
+
+    function renderSlideGallery() {
+      els.slideGallery.textContent = "";
+      state.slides.forEach((slide, index) => {
+        const button = document.createElement("button");
+        const label = document.createElement("span");
+        const frame = document.createElement("span");
+        const content = document.createElement("span");
+        const text = document.createElement("span");
+
+        button.type = "button";
+        button.className = "slide-thumb";
+        button.dataset.slideIndex = String(index);
+        button.setAttribute("aria-label", `Go to slide ${index + 1}`);
+
+        label.className = "slide-thumb-label";
+        label.textContent = `Slide ${index + 1}`;
+
+        frame.className = "slide-thumb-frame";
+        content.className = "slide-thumb-content";
+        text.className = "preview-text";
+        text.textContent = slide;
+        content.style.fontSize = `${getDisplayFontSize(slide)}px`;
+        syncSlideLayout(content);
+
+        content.append(text);
+        frame.append(content);
+        button.append(label, frame);
+        button.addEventListener("click", () => goToSlide(index));
+        els.slideGallery.append(button);
+      });
+
+      updateGalleryScale();
+      updateGallerySelection();
+    }
+
+    function goToSlide(index) {
+      state.slideIndex = Math.max(0, Math.min(state.slides.length - 1, index));
+      render();
+    }
+
+    function updateGallerySelection() {
+      Array.from(els.slideGallery.children).forEach((thumb, index) => {
+        const isActive = index === state.slideIndex;
+        thumb.setAttribute("aria-current", String(isActive));
+        if (isActive) thumb.scrollIntoView({ block: "nearest", inline: "nearest" });
+      });
     }
 
     function updatePreviewScale() {
@@ -4771,9 +4933,26 @@
     }
 
     function syncPreviewLayout() {
-      els.previewSlide.style.setProperty("--slide-padding-x", `${fontSizing.horizontalPaddingVw}%`);
-      els.previewSlide.style.setProperty("--slide-padding-y", `${fontSizing.verticalPaddingVh}%`);
-      els.previewSlide.style.setProperty("--slide-line-height", fontSizing.lineHeight);
+      syncSlideLayout(els.previewSlide);
+    }
+
+    function syncSlideLayout(element) {
+      element.style.setProperty("--slide-padding-x", `${fontSizing.horizontalPaddingVw}%`);
+      element.style.setProperty("--slide-padding-y", `${fontSizing.verticalPaddingVh}%`);
+      element.style.setProperty("--slide-line-height", fontSizing.lineHeight);
+    }
+
+    function updateGalleryScale() {
+      Array.from(els.slideGallery.querySelectorAll(".slide-thumb-frame")).forEach(frame => {
+        const content = frame.querySelector(".slide-thumb-content");
+        const frameBox = frame.getBoundingClientRect();
+        if (!content || !frameBox.width || !frameBox.height) return;
+        const scale = Math.min(
+          frameBox.width / fontSizing.fallbackWidth,
+          frameBox.height / fontSizing.fallbackHeight
+        );
+        content.style.setProperty("--thumb-scale", scale);
+      });
     }
 
     function setFontSize(value) {
@@ -4977,11 +5156,13 @@
           if (event.key === "Escape") closeImportPreview();
           return;
         }
+        if (/^(BUTTON|INPUT|SELECT|TEXTAREA)$/.test(event.target.tagName)) return;
         if (event.key === "ArrowRight" || event.key === "PageDown" || event.key === " ") go(1);
         if (event.key === "ArrowLeft" || event.key === "PageUp") go(-1);
       });
       window.addEventListener("resize", debounce(() => {
         updatePreviewScale();
+        updateGalleryScale();
         if (!getDisplayDocument()) rebuildSlides();
       }, 120));
 
