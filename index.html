@@ -124,6 +124,18 @@
       align-items: center;
     }
 
+    .toggle-row {
+      align-items: center;
+      display: flex;
+      gap: 10px;
+    }
+
+    .toggle-row input {
+      accent-color: var(--accent);
+      height: 18px;
+      width: 18px;
+    }
+
     .button-row {
       display: grid;
       grid-template-columns: 1fr 1fr;
@@ -311,9 +323,13 @@
 
       <div class="field">
         <label for="fontSize">Audience font size</label>
+        <label class="toggle-row">
+          <input id="autoFit" type="checkbox" checked>
+          <span>Auto fit each slide</span>
+        </label>
         <div class="font-row">
-          <input id="fontSize" type="range" min="32" max="112" step="2" value="64">
-          <input id="fontSizeNumber" type="number" min="32" max="112" step="2" value="64" aria-label="Font size in pixels">
+          <input id="fontSize" type="range" min="32" max="132" step="2" value="64">
+          <input id="fontSizeNumber" type="number" min="32" max="132" step="2" value="64" aria-label="Font size in pixels">
         </div>
       </div>
 
@@ -4247,10 +4263,19 @@
     const state = {
       songIndex: 0,
       fontSize: 64,
+      manualFontSize: 64,
+      autoFit: true,
       slideIndex: 0,
       slides: [],
       displayWindow: null,
       pendingImport: []
+    };
+
+    const fontSizing = {
+      min: 32,
+      manualMax: 132,
+      autoMax: 132,
+      autoSplitSize: 64
     };
 
     const pdfJsConfig = {
@@ -4268,6 +4293,7 @@
       importList: document.getElementById("importList"),
       cancelImport: document.getElementById("cancelImport"),
       confirmImport: document.getElementById("confirmImport"),
+      autoFit: document.getElementById("autoFit"),
       fontSize: document.getElementById("fontSize"),
       fontSizeNumber: document.getElementById("fontSizeNumber"),
       openDisplay: document.getElementById("openDisplay"),
@@ -4669,7 +4695,8 @@
 
     function rebuildSlides() {
       const song = songs[state.songIndex];
-      state.slides = splitLyrics(song, state.fontSize);
+      const splitFontSize = state.autoFit ? fontSizing.autoSplitSize : state.fontSize;
+      state.slides = splitLyrics(song, splitFontSize);
       state.slideIndex = Math.min(state.slideIndex, state.slides.length - 1);
       render();
     }
@@ -4677,33 +4704,93 @@
     function render() {
       const song = songs[state.songIndex];
       const slide = state.slides[state.slideIndex] || "";
+      const displayFontSize = getDisplayFontSize(slide);
       els.songTitle.textContent = song.title;
       els.songMeta.textContent = song.author;
       els.previewText.textContent = slide || "No lyrics on this slide.";
       els.previewText.classList.toggle("empty", !slide);
-      els.previewText.style.fontSize = `${Math.max(22, Math.round(state.fontSize * 0.55))}px`;
+      els.previewText.style.fontSize = `${Math.max(22, Math.round(displayFontSize * 0.55))}px`;
+      syncFontControls(displayFontSize);
       els.slideStatus.textContent = `${state.slideIndex + 1} / ${state.slides.length}`;
-      els.splitStatus.textContent = `${state.slides.length} slide${state.slides.length === 1 ? "" : "s"} at ${state.fontSize}px`;
+      els.splitStatus.textContent = state.autoFit
+        ? `${state.slides.length} slide${state.slides.length === 1 ? "" : "s"} - auto ${displayFontSize}px`
+        : `${state.slides.length} slide${state.slides.length === 1 ? "" : "s"} at ${state.fontSize}px`;
       els.prevSlide.disabled = state.slideIndex === 0;
       els.nextSlide.disabled = state.slideIndex >= state.slides.length - 1;
-      renderDisplay(slide);
+      renderDisplay(slide, displayFontSize);
     }
 
-    function renderDisplay(slide) {
+    function renderDisplay(slide, fontSize = getDisplayFontSize(slide)) {
       const displayDoc = getDisplayDocument();
       els.displayStatus.textContent = displayDoc ? "Display open" : "Display closed";
       if (!displayDoc) return;
       const slideEl = displayDoc.getElementById("slide");
       slideEl.textContent = slide;
-      slideEl.style.fontSize = `${state.fontSize}px`;
+      slideEl.style.fontSize = `${fontSize}px`;
     }
 
     function setFontSize(value) {
-      const size = Math.max(32, Math.min(112, Number(value) || 64));
+      const size = Math.max(fontSizing.min, Math.min(fontSizing.manualMax, Number(value) || 64));
       state.fontSize = size;
+      state.manualFontSize = size;
       els.fontSize.value = size;
       els.fontSizeNumber.value = size;
       rebuildSlides();
+    }
+
+    function getDisplayFontSize(slide) {
+      if (!state.autoFit) return state.fontSize;
+      return findLargestFittingFontSize(slide, fontSizing.min, fontSizing.autoMax);
+    }
+
+    function findLargestFittingFontSize(slide, minSize, maxSize) {
+      if (!slide) return minSize;
+      let low = minSize;
+      let high = maxSize;
+      let best = minSize;
+      const lines = slide.split("\n");
+
+      while (low <= high) {
+        const mid = Math.floor((low + high) / 2);
+        const evenMid = mid % 2 === 0 ? mid : mid - 1;
+        if (fits(lines, getAutoFitMeasure(evenMid), getAutoFitMaxHeight(evenMid), evenMid)) {
+          best = evenMid;
+          low = evenMid + 2;
+        } else {
+          high = evenMid - 2;
+        }
+      }
+
+      return best;
+    }
+
+    function getAutoFitMeasure(fontSize) {
+      const displayDoc = getDisplayDocument();
+      if (!displayDoc) return null;
+      const measure = displayDoc.getElementById("measure");
+      measure.style.fontSize = `${fontSize}px`;
+      return measure;
+    }
+
+    function getAutoFitMaxHeight(fontSize) {
+      const displayDoc = getDisplayDocument();
+      if (displayDoc) return displayDoc.defaultView.innerHeight * 0.86;
+      return Math.max(1, Math.floor(520 / (fontSize * 1.18))) * fontSize * 1.18;
+    }
+
+    function setAutoFit(enabled) {
+      state.autoFit = enabled;
+      els.autoFit.checked = enabled;
+      els.fontSize.disabled = enabled;
+      els.fontSizeNumber.disabled = enabled;
+      if (!enabled) state.fontSize = state.manualFontSize;
+      rebuildSlides();
+    }
+
+    function syncFontControls(displayFontSize) {
+      const visibleSize = state.autoFit ? displayFontSize : state.fontSize;
+      els.fontSize.value = Math.min(fontSizing.manualMax, visibleSize);
+      els.fontSizeNumber.value = visibleSize;
     }
 
     function go(delta) {
@@ -4794,6 +4881,7 @@
       els.importDialog.addEventListener("click", event => {
         if (event.target === els.importDialog) closeImportPreview();
       });
+      els.autoFit.addEventListener("change", event => setAutoFit(event.target.checked));
       els.fontSize.addEventListener("input", event => setFontSize(event.target.value));
       els.fontSizeNumber.addEventListener("change", event => setFontSize(event.target.value));
       els.openDisplay.addEventListener("click", openDisplay);
@@ -4809,7 +4897,7 @@
         if (event.key === "ArrowLeft" || event.key === "PageUp") go(-1);
       });
 
-      rebuildSlides();
+      setAutoFit(state.autoFit);
       setInterval(() => renderDisplay(state.slides[state.slideIndex] || ""), 1000);
     }
 
