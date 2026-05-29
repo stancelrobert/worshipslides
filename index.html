@@ -199,6 +199,17 @@
       text-align: center;
     }
 
+    .measure-text {
+      font-weight: 700;
+      left: -200vw;
+      line-height: 1.12;
+      overflow-wrap: anywhere;
+      position: fixed;
+      top: 0;
+      visibility: hidden;
+      white-space: pre-wrap;
+    }
+
     .preview-text {
       width: 100%;
       white-space: pre-wrap;
@@ -328,8 +339,8 @@
           <span>Auto fit each slide</span>
         </label>
         <div class="font-row">
-          <input id="fontSize" type="range" min="32" max="132" step="2" value="64">
-          <input id="fontSizeNumber" type="number" min="32" max="132" step="2" value="64" aria-label="Font size in pixels">
+          <input id="fontSize" type="range" min="32" max="180" step="2" value="64">
+          <input id="fontSizeNumber" type="number" min="32" max="180" step="2" value="64" aria-label="Font size in pixels">
         </div>
       </div>
 
@@ -362,6 +373,7 @@
       <div class="preview-wrap">
         <div class="preview">
           <div id="previewText" class="preview-text empty">Select a song to start.</div>
+          <div id="previewMeasure" class="measure-text"></div>
         </div>
       </div>
     </section>
@@ -4273,9 +4285,14 @@
 
     const fontSizing = {
       min: 32,
-      manualMax: 132,
-      autoMax: 132,
-      autoSplitSize: 64
+      manualMax: 180,
+      autoMax: 180,
+      autoSplitSize: 64,
+      horizontalPaddingVw: 5,
+      verticalPaddingVh: 5,
+      lineHeight: 1.12,
+      fallbackWidth: 1280,
+      fallbackHeight: 720
     };
 
     const pdfJsConfig = {
@@ -4304,7 +4321,8 @@
       songTitle: document.getElementById("songTitle"),
       songMeta: document.getElementById("songMeta"),
       splitStatus: document.getElementById("splitStatus"),
-      previewText: document.getElementById("previewText")
+      previewText: document.getElementById("previewText"),
+      previewMeasure: document.getElementById("previewMeasure")
     };
 
     function projectionHtml() {
@@ -4315,6 +4333,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Audience Display</title>
   <style>
+    * { box-sizing: border-box; }
     html, body { width: 100%; height: 100%; margin: 0; background: #000; overflow: hidden; }
     body { color: #fff; font-family: Arial, Helvetica, sans-serif; }
     #slide {
@@ -4322,23 +4341,23 @@
       height: 100vh;
       display: grid;
       place-items: center;
-      padding: 7vh 7vw;
+      padding: ${fontSizing.verticalPaddingVh}vh ${fontSizing.horizontalPaddingVw}vw;
       text-align: center;
       white-space: pre-wrap;
       overflow-wrap: anywhere;
       font-weight: 700;
-      line-height: 1.18;
+      line-height: ${fontSizing.lineHeight};
     }
     #measure {
       position: fixed;
       left: -200vw;
       top: 0;
-      width: 86vw;
+      width: calc(100vw - ${fontSizing.horizontalPaddingVw * 2}vw);
       padding: 0;
       white-space: pre-wrap;
       overflow-wrap: anywhere;
       font-weight: 700;
-      line-height: 1.18;
+      line-height: ${fontSizing.lineHeight};
       visibility: hidden;
     }
   </style>
@@ -4631,16 +4650,7 @@
     }
 
     function measureLines(fontSize) {
-      const displayDoc = getDisplayDocument();
-      const fallbackLines = Math.max(1, Math.floor(520 / (fontSize * 1.18)));
-      if (!displayDoc) {
-        return { maxHeight: fallbackLines * fontSize * 1.18, measure: null };
-      }
-
-      const measure = displayDoc.getElementById("measure");
-      measure.style.fontSize = `${fontSize}px`;
-      const maxHeight = displayDoc.defaultView.innerHeight * 0.86;
-      return { maxHeight, measure };
+      return getMeasureContext(fontSize);
     }
 
     function splitLyrics(song, fontSize) {
@@ -4688,7 +4698,7 @@
     }
 
     function fits(lines, measure, maxHeight, fontSize) {
-      if (!measure) return lines.length * fontSize * 1.18 <= maxHeight;
+      if (!measure) return lines.length * fontSize * fontSizing.lineHeight <= maxHeight;
       measure.textContent = lines.join("\n");
       return measure.scrollHeight <= maxHeight;
     }
@@ -4773,17 +4783,47 @@
     }
 
     function getAutoFitMeasure(fontSize) {
-      const displayDoc = getDisplayDocument();
-      if (!displayDoc) return null;
-      const measure = displayDoc.getElementById("measure");
-      measure.style.fontSize = `${fontSize}px`;
-      return measure;
+      return getMeasureContext(fontSize).measure;
     }
 
     function getAutoFitMaxHeight(fontSize) {
+      return getMeasureContext(fontSize).maxHeight;
+    }
+
+    function getMeasureContext(fontSize) {
       const displayDoc = getDisplayDocument();
-      if (displayDoc) return displayDoc.defaultView.innerHeight * 0.86;
-      return Math.max(1, Math.floor(520 / (fontSize * 1.18))) * fontSize * 1.18;
+      if (displayDoc) {
+        const measure = displayDoc.getElementById("measure");
+        const width = getAvailableSlideWidth(displayDoc.defaultView.innerWidth);
+        measure.style.fontSize = `${fontSize}px`;
+        measure.style.lineHeight = fontSizing.lineHeight;
+        measure.style.width = `${width}px`;
+        return {
+          maxHeight: getAvailableSlideHeight(displayDoc.defaultView.innerHeight),
+          measure
+        };
+      }
+
+      const measure = els.previewMeasure;
+      measure.style.fontSize = `${fontSize}px`;
+      measure.style.lineHeight = fontSizing.lineHeight;
+      measure.style.width = `${getAvailableSlideWidth(fontSizing.fallbackWidth)}px`;
+      return {
+        maxHeight: getAvailableSlideHeight(fontSizing.fallbackHeight),
+        measure
+      };
+    }
+
+    function getAvailableSlideWidth(containerWidth) {
+      return containerWidth * (1 - (fontSizing.horizontalPaddingVw * 2 / 100));
+    }
+
+    function getAvailableSlideHeight(containerHeight) {
+      return containerHeight * (1 - (fontSizing.verticalPaddingVh * 2 / 100));
+    }
+
+    function getFallbackAvailableHeight(fontSize) {
+      return Math.max(1, Math.floor(520 / (fontSize * fontSizing.lineHeight))) * fontSize * fontSizing.lineHeight;
     }
 
     function setAutoFit(enabled) {
