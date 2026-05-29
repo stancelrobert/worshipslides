@@ -1,0 +1,2625 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Worship Slides</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #f6f7f8;
+      --panel: #fff;
+      --text: #1d252c;
+      --muted: #66717d;
+      --line: #d8dee5;
+      --accent: #1f7a65;
+      --accent-strong: #155f4d;
+      --shadow: 0 16px 42px rgba(26, 38, 51, 0.12);
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: var(--bg);
+      color: var(--text);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    button, select, input { font: inherit; }
+
+    button {
+      min-height: 42px;
+      padding: 0 16px;
+      border: 1px solid transparent;
+      border-radius: 8px;
+      background: var(--accent);
+      color: white;
+      cursor: pointer;
+      font-weight: 700;
+    }
+
+    button:hover { background: var(--accent-strong); }
+    button:disabled { cursor: not-allowed; opacity: 0.45; }
+
+    .shell {
+      display: grid;
+      grid-template-columns: minmax(280px, 360px) minmax(0, 1fr);
+      gap: 24px;
+      min-height: 100vh;
+      padding: 24px;
+    }
+
+    .panel {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      box-shadow: var(--shadow);
+    }
+
+    .controls {
+      align-self: start;
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+      padding: 20px;
+      position: sticky;
+      top: 24px;
+    }
+
+    .brand { display: flex; flex-direction: column; gap: 4px; padding-bottom: 8px; }
+    .brand h1 { font-size: 1.35rem; line-height: 1.2; margin: 0; }
+    .brand p { color: var(--muted); margin: 0; }
+
+    .field { display: flex; flex-direction: column; gap: 8px; }
+
+    .field label,
+    .section-label {
+      color: var(--muted);
+      font-size: 0.82rem;
+      font-weight: 800;
+      letter-spacing: 0;
+      text-transform: uppercase;
+    }
+
+    select,
+    input[type="number"] {
+      width: 100%;
+      min-height: 42px;
+      padding: 0 12px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: white;
+      color: var(--text);
+    }
+
+    input[type="range"] { width: 100%; accent-color: var(--accent); }
+
+    .font-row {
+      display: grid;
+      grid-template-columns: 1fr 86px;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .button-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .secondary { background: white; border-color: var(--line); color: var(--text); }
+    .secondary:hover { background: #edf1f3; }
+
+    .status {
+      border-top: 1px solid var(--line);
+      color: var(--muted);
+      display: flex;
+      justify-content: space-between;
+      gap: 16px;
+      padding-top: 16px;
+    }
+
+    .stage {
+      display: grid;
+      grid-template-rows: auto minmax(0, 1fr);
+      min-height: calc(100vh - 48px);
+      overflow: hidden;
+    }
+
+    .stage-header {
+      border-bottom: 1px solid var(--line);
+      display: flex;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 18px 20px;
+    }
+
+    .stage-header h2 { font-size: 1.15rem; line-height: 1.25; margin: 0; }
+    .stage-header p { color: var(--muted); margin: 4px 0 0; }
+
+    .preview-wrap {
+      display: grid;
+      min-height: 0;
+      padding: 20px;
+      background: #eef2f4;
+    }
+
+    .preview {
+      display: grid;
+      place-items: center;
+      min-height: 0;
+      border-radius: 8px;
+      background: #050505;
+      color: white;
+      overflow: hidden;
+      padding: 32px;
+      text-align: center;
+    }
+
+    .preview-text {
+      width: 100%;
+      white-space: pre-wrap;
+      overflow-wrap: anywhere;
+      font-weight: 700;
+      line-height: 1.18;
+    }
+
+    .hint { color: var(--muted); font-size: 0.9rem; line-height: 1.45; margin: 0; }
+
+    .empty {
+      color: var(--muted);
+      display: grid;
+      place-items: center;
+      min-height: 260px;
+      text-align: center;
+    }
+
+    @media (max-width: 820px) {
+      .shell { grid-template-columns: 1fr; padding: 14px; }
+      .controls { position: static; }
+      .stage { min-height: 62vh; }
+      .stage-header { flex-direction: column; }
+    }
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <section class="controls panel" aria-label="Presenter controls">
+      <div class="brand">
+        <h1>Worship Slides</h1>
+        <p>Choose a song, set the size, and send lyrics to the projector window.</p>
+      </div>
+
+      <div class="field">
+        <label for="songSelect">Song</label>
+        <select id="songSelect"></select>
+      </div>
+
+      <div class="field">
+        <label for="fontSize">Audience font size</label>
+        <div class="font-row">
+          <input id="fontSize" type="range" min="32" max="112" step="2" value="64">
+          <input id="fontSizeNumber" type="number" min="32" max="112" step="2" value="64" aria-label="Font size in pixels">
+        </div>
+      </div>
+
+      <button id="openDisplay">Open audience display</button>
+
+      <div class="field">
+        <div class="section-label">Navigation</div>
+        <div class="button-row">
+          <button id="prevSlide" class="secondary" type="button">Previous</button>
+          <button id="nextSlide" type="button">Next</button>
+        </div>
+      </div>
+
+      <p class="hint">Tip: after opening the audience display, drag it to the external screen and use the browser fullscreen command.</p>
+
+      <div class="status">
+        <span id="displayStatus">Display closed</span>
+        <strong id="slideStatus">0 / 0</strong>
+      </div>
+    </section>
+
+    <section class="stage panel" aria-label="Current slide preview">
+      <header class="stage-header">
+        <div>
+          <h2 id="songTitle">No song selected</h2>
+          <p id="songMeta"></p>
+        </div>
+        <p id="splitStatus">Waiting for lyrics</p>
+      </header>
+      <div class="preview-wrap">
+        <div class="preview">
+          <div id="previewText" class="preview-text empty">Select a song to start.</div>
+        </div>
+      </div>
+    </section>
+  </main>
+  <script>
+    const songs = [
+      {
+            "title": "WZYWAM CIĘ",
+            "author": "ŚPIEWNIK (8).pdf",
+            "lyrics": [
+                  "1. Wzywam Cię, Duchu, przyjdź",
+                  "Czekam wciąż, byś dotknął nas",
+                  "Wołam Cię, Panie, przyjdź",
+                  "Jezu, Zbawco, do dzieci Twych",
+                  "Ref: Jak spragniona ziemia rosy",
+                  "Dusza ma",
+                  "Tylko Ty możesz wypełnić",
+                  "Serca głód, serca głód",
+                  "2.",
+                  "Głębio morz, potęgo gór,",
+                  "Boże mój, nie mogę bez",
+                  "Twej miłości żyć",
+                  "Nie chcę bez Ciebie żyć"
+            ]
+      },
+      {
+            "title": "EL SHADDAI",
+            "author": "ŚPIEWNIK (8).pdf",
+            "lyrics": [
+                  "El Shaddai",
+                  "El Shaddai",
+                  "Adonai",
+                  "Elohenu",
+                  "Tylko jeden Bóg",
+                  "Panem moim jest",
+                  "O tym dzisiaj chcę",
+                  "Śpiewać Chwały Pieśń",
+                  "Wielbić Imię Twe"
+            ]
+      },
+      {
+            "title": "W MOCY SŁOWA",
+            "author": "ŚPIEWNIK (8).pdf",
+            "lyrics": [
+                  "W mocy słowa zstępujesz",
+                  "Płomieniem ognia serce obejmujesz",
+                  "Jak można wątpić, że jesteś  x2"
+            ]
+      },
+      {
+            "title": "OCIEŃ MNIE PANIE",
+            "author": "ŚPIEWNIK (8).pdf",
+            "lyrics": [
+                  "Ocień mnie Panie swym milczeniem",
+                  "Ocień mnie swą miłością",
+                  "Chcę w Twoim cieniu",
+                  "Też stać się cieniem",
+                  "Aby Twój Duch przepełnił mnie  x2",
+                  "Bliskością swą / x4"
+            ]
+      },
+      {
+            "title": "TWOJA MIŁOŚĆ",
+            "author": "ŚPIEWNIK (8).pdf",
+            "lyrics": [
+                  "Jesteś blisko mnie, a tęsknie za Duchem Twym",
+                  "Kocham kroki Twe i wiem jak pukasz do drzwi",
+                  "Przychodzisz jak ciepły wiatr",
+                  "Otwieram się i czuję znów, że",
+                  "Twoja miłość jak ciepły deszcz",
+                  "Twoja miłość jak morze gwiazd za dnia",
+                  "Twoja miłość sprawia że",
+                  "Nieskończenie dobry Święty Duch",
+                  "Ogarnia mnie"
+            ]
+      },
+      {
+            "title": "MEMU BOGU KRÓLOWI",
+            "author": "ŚPIEWNIK (8).pdf",
+            "lyrics": [
+                  "Memu Bogu Królowi będę śpiewał tę pieśń",
+                  "Teraz zawsze na wieki, amen!",
+                  "Alleluja",
+                  "Alleluja",
+                  "Alleluja, amen!",
+                  "Zawsze będę śpiewał Jezus Królem jest",
+                  "Jezus Królem moim jest!"
+            ]
+      },
+      {
+            "title": "O HOSTIO ŚWIĘTA",
+            "author": "ŚPIEWNIK (8).pdf",
+            "lyrics": [
+                  "O Hostio Święta, zdroju Bożej Słodyczy",
+                  "Ty dajesz duszy mojej moc",
+                  "O Tyś Wszechmocny, któryś przybrał ciało z Dziewicy",
+                  "Przychodzisz do serca mego utajony",
+                  "I nie dosięga Cię zmysłów moc / x2",
+                  "O Hostio...",
+                  "Przychodzisz...",
+                  "Czyń ze mną co chcesz",
+                  "Nie odstąpię od Ciebie",
+                  "Bo Ty jesteś źródłem mojego życia / x2",
+                  "O Hostio…"
+            ]
+      },
+      {
+            "title": "ZAUFAŁEM PANU",
+            "author": "ŚPIEWNIK (8).pdf",
+            "lyrics": [
+                  "Zaufałem Panu i już",
+                  "Niczego nie muszę się lękać",
+                  "Zaufałem Panu i już",
+                  "Niczego nie muszę się trwożyć",
+                  "Wierzę Mu bo On a ma moc",
+                  "Przezwyciężyć w moim sercu zło",
+                  "Wierzę Mu bo On a ma właśnie taką moc /x2"
+            ]
+      },
+      {
+            "title": "TY DASZ MI POKÓJ SERCA",
+            "author": "ŚPIEWNIK (8).pdf",
+            "lyrics": [
+                  "Ty dasz mi pokój serca, Panie mój,",
+                  "Bo Tyś zbawieniem mym.",
+                  "Tak, w Tobie znajdzie pokój dusza moja",
+                  "I uciszy się"
+            ]
+      },
+      {
+            "title": "Z TOBĄ CIEMNOŚĆ",
+            "author": "ŚPIEWNIK (8).pdf",
+            "lyrics": [
+                  "Z Tobą ciemność nie będzie ciemna wokół mnie",
+                  "A noc tak jak dzień zajaśnieje"
+            ]
+      },
+      {
+            "title": "RUAH",
+            "author": "ŚPIEWNIK (8).pdf",
+            "lyrics": [
+                  "Ruah, Ruah, Ruah",
+                  "Nie siłą, nie mocą naszą,",
+                  "lecz mocą Ducha Świętego",
+                  "DUSZO MA PANA CHWAL",
+                  "Ref. Duszo ma Pana chwal",
+                  "Oddaj Bogu cześć",
+                  "Świętemu śpiewaj pieśń",
+                  "Z mocą wywyższaj Go",
+                  "Duszo ma",
+                  "Uwielbiam Boże Cię",
+                  "1. Nowy dzień wraz ze wschodem słońca",
+                  "Znów nadszedł czas by Ci śpiewać pieśń",
+                  "Cokolwiek jest już za mną i to wszystko co przede mną",
+                  "Wiem, będę śpiewać gdy nadejdzie zmrok",
+                  "2. Bogaty w miłość gniew oddalasz Panie",
+                  "Twe serce miłe wielbię imię Twe",
+                  "Ze względu na Twą dobroć będę śpiewać Tobie pieśni",
+                  "Wiele powodów by uwielbiać Cię",
+                  "3. Przyjdzie dzień gdy bez sił zostanę",
+                  "Nadejdzie czas mego końca tu",
+                  "Dusza ma będzie już na zawsze Cię uwielbiać",
+                  "W wieczności z Tobą piękna zabrzmi pieśń",
+                  "Uwielbiam Boże Cię /x2"
+            ]
+      },
+      {
+            "title": "KOCHAM WIĘC NIE MUSZĘ SIĘ BAĆ",
+            "author": "ŚPIEWNIK (8).pdf",
+            "lyrics": [
+                  "1. Kocham, więc nie muszę się bać;",
+                  "zabierz mój strach! x3",
+                  "Kocham, więc nie muszę się bać;",
+                  "zabierz mój strach x3",
+                  "Jezus mówi ci, że miłość ta",
+                  "zabiera strach x3",
+                  "2. Jezus daje ci miłość swą;",
+                  "nie lękaj się! x3",
+                  "Jezus daje ci miłość swą;",
+                  "nie lękaj się! x3",
+                  "Jezus mówi ci, że miłość ta",
+                  "zabiera strach!!! x3",
+                  "Jezus DROGĄ",
+                  "Jezus PRAWDĄ",
+                  "Jezus ŻYCIEM oooo   x4"
+            ]
+      },
+      {
+            "title": "PANIE GDY TONĘ",
+            "author": "ŚPIEWNIK (8).pdf",
+            "lyrics": [
+                  "Panie gdy tonę Ty ocal mnie",
+                  "Wierzę Ci",
+                  "Ufam że",
+                  "Krwią zapłaciłeś bym twoim był",
+                  "Oto więc jestem Twym"
+            ]
+      },
+      {
+            "title": "SŁOWA JEGO",
+            "author": "ŚPIEWNIK (8).pdf",
+            "lyrics": [
+                  "Słowa Jego są słodyczą i cały pełen jest powabu",
+                  "Taki jest Miły mój, oto Przyjaciel mój, córki Jeruzalem"
+            ]
+      },
+      {
+            "title": "BÓG ADONAI",
+            "author": "ŚPIEWNIK (8).pdf",
+            "lyrics": [
+                  "Panie, któż jak Ty, od wieków jest Twój tron,",
+                  "na wieki są Twe dni",
+                  "Morza chwalą Cię, góry wznoszą pieśń,",
+                  "Tyś najwyższy jest / x2",
+                  "ref.: Bóg Adonai, od poranka aż po zmierzch",
+                  "cała Ziemia Tobie śpiewa",
+                  "Bóg Adonai, całe Niebo chwali Cię,",
+                  "Jedynemu Bogu chwała cześć.",
+                  "Panie, któż jak Ty...",
+                  "Bóg Adonai, od poranka aż po zmierzch",
+                  "cała Ziemia Tobie śpiewa",
+                  "Bóg Adonai, całe Niebo chwali Cię,",
+                  "Jedynemu Bogu chwała",
+                  "Bóg Adonai, od poranka aż po zmierzch",
+                  "cała Ziemia Tobie śpiewa",
+                  "Bóg Adonai, całe Niebo chwali Cię,",
+                  "Jedynemu Bogu chwała, cześć."
+            ]
+      },
+      {
+            "title": "STOJĘ DZIŚ",
+            "author": "ŚPIEWNIK (8).pdf",
+            "lyrics": [
+                  "Stoję dziś, moje serce,ręce tak wyciągam",
+                  "W podziwie dla Tego,który wszystko dał!",
+                  "Stoję dziś, moją duszę, Panie, Tobie składam,",
+                  "Ja chcę być, jak Ty!"
+            ]
+      },
+      {
+            "title": "OGNIU Z NIEBA PRZYJDŹ",
+            "author": "ŚPIEWNIK (8).pdf",
+            "lyrics": [
+                  "Ogniu z nieba przyjdź namaść usta me,",
+                  "Niechaj zabrzmi dziś uwielbienia pieśń,",
+                  "Niech do nieba wzniesie się jak dym kadzidła x2",
+                  "Niech Twa święta moc płonie w sercach by",
+                  "Nowa chwały pieśń popłynęła z nich,",
+                  "Chcę zaśpiewać dzisiaj Ci pieśń uwielbienia x2",
+                  "Alleluja / x4"
+            ]
+      },
+      {
+            "title": "ZBUDOWANI NA CHRYSTUSIE",
+            "author": "ŚPIEWNIK (8).pdf",
+            "lyrics": [
+                  "Nic nas nie zdoła odłączyć od Ciebie,",
+                  "Ani śmierć, ani życie, utrapienie i prześladowanie",
+                  "Nic nas nie zdoła odłączyć od Ciebie,",
+                  "Ale we wszystkim tym odnosimy pełnie zwycięstwa,",
+                  "Dzięki Temu, który nas umiłował",
+                  "Zbudowani na Chrystusie,",
+                  "w Nim zakorzenieni,",
+                  "mocni w wierze i wdzięczni,",
+                  "bo On jest źródłem życia / x2",
+                  "Alleluja / x8"
+            ]
+      },
+      {
+            "title": "ŚWIĘTY, ŚWIĘTY, ŚWIĘTY",
+            "author": "ŚPIEWNIK (8).pdf",
+            "lyrics": [
+                  "Święty, Święty, Święty",
+                  "Pan Bóg Wszechmocny",
+                  "Który był i jest, i przyjdzie znów",
+                  "Oddajmy Mu cześć, pokłońmy się Mu"
+            ]
+      },
+      {
+            "title": "MÓW DO MNIE PANIE",
+            "author": "ŚPIEWNIK (8).pdf",
+            "lyrics": [
+                  "Mów do mnie Panie",
+                  "chcę słyszeć Cię,",
+                  "przyjąć od Ciebie",
+                  "co masz dla mnie",
+                  "Nie chcę się chować",
+                  "lecz w Tobie skryć",
+                  "w cieniu Twym Panie",
+                  "chcę iść",
+                  "Święty Potężny jesteś Panie nasz",
+                  "przed Tobą dziś możemy stać",
+                  "dzięki łasce",
+                  "nie dzięki nam samym"
+            ]
+      },
+      {
+            "title": "NIE PRAGNĘ",
+            "author": "ŚPIEWNIK (8).pdf",
+            "lyrics": [
+                  "Nie pragnę, o nie, tego co wielkie",
+                  "Ani tego, co przerasta me siły (tak mało siły mam)",
+                  "Lecz uspokoiłem i uciszyłem mą duszę",
+                  "Jak ciche dziecko jest we mnie moja dusza x2",
+                  "Złóż nadzieję w Panu, teraz i na wieki!!! /x4"
+            ]
+      },
+      {
+            "title": "JAK OŻYWCZY DESZCZ",
+            "author": "ŚPIEWNIK (8).pdf",
+            "lyrics": [
+                  "Jak ożywczy deszcz Duchu Święty przyjdź.",
+                  "Dotknij naszych serc, rozpal ognia żar.",
+                  "Dziś przenikaj nas tchnieniem mocy swej,",
+                  "bądź nam światłem dnia i nadzieją serc. / x2"
+            ]
+      },
+      {
+            "title": "SCHOWAJ MNIE",
+            "author": "ŚPIEWNIK (8).pdf",
+            "lyrics": [
+                  "1. Schowaj mnie pod skrzydła Swe",
+                  "Ukryj mnie w silnej dłoni Swej / x2",
+                  "Ref.: Kiedy fale mórz chcą porwać mnie",
+                  "Z Tobą wzniosę się, podniesiesz mnie",
+                  "Panie Królem Tyś spienionych wód",
+                  "Ja ufam Ci - Ty jesteś Bóg / x2",
+                  "2. Odpocznę dziś w ramionach Twych",
+                  "Dusza ma w pokoju będzie trwać / x2"
+            ]
+      },
+      {
+            "title": "DUCHU ŚWIĘTY WOŁAM PRZYJDŹ",
+            "author": "ŚPIEWNIK (8).pdf",
+            "lyrics": [
+                  "Duchu Święty, wołam przyjdź",
+                  "bądź jak ogień duszy mej,",
+                  "bądź jak ogień w ciele mym,",
+                  "rozpal mnie / x2",
+                  "Wszechmogący Bóg jest pośród nas,",
+                  "miłosierdzie Jego wielkie jest,",
+                  "okazuje dobroć swoją dziś,",
+                  "dla tych, którzy chcą miłować Go /x2"
+            ]
+      },
+      {
+            "title": "PANIE MÓJ",
+            "author": "ŚPIEWNIK (8).pdf",
+            "lyrics": [
+                  "Panie mój wiesz, że Cię kocham",
+                  "Ty wszystko wiesz, miłuję Cię",
+                  "JEDEN JEST BÓG I PAN",
+                  "1. Pan jest dobrym pasterzem",
+                  "Życie złożył za świat, za swój lud",
+                  "On zgromadził narody w jeden dom",
+                  "Jedną wiarę dał nam",
+                  "Pan zbudował świątynię",
+                  "Wiary skałą umocnił jej próg",
+                  "Ustanowił pasterzy",
+                  "Aby wiedli lud w miejsce gdzie jest",
+                  "Ref: Jeden jest Bóg i Pan",
+                  "I ojciec wszystkich",
+                  "On wybrał, zjednoczył nas",
+                  "Jeden jest Duch i chrzest",
+                  "I jedna wiara",
+                  "Ponad wszystkimi jest Pan",
+                  "2. Obdarował Dwunastu",
+                  "Wskazał Piotr, powierzył mu klucz",
+                  "By otwarli Królestwo,",
+                  "W którym ciemność nie znaczy już nic",
+                  "Zanim wyszli na drogi",
+                  "Szumem wichru  napełnił ich dom",
+                  "Dał im Ducha by mogli",
+                  "Z mocą świadczyć i głosić tę wieść",
+                  "3. Bóg otwiera ramiona",
+                  "Weź tę Miłość i siądź Mu u stóp",
+                  "On uzdrowił twe serce",
+                  "Nowym tchnieniem umocnić cię chce"
+            ]
+      },
+      {
+            "title": "PRZED TRONEM TWYM",
+            "author": "ŚPIEWNIK (8).pdf",
+            "lyrics": [
+                  "Przed tronem Twym stoimy",
+                  "Wpatrzeni w Twej miłości blask",
+                  "Do Ciebie Panie podobni",
+                  "Stajemy się widząc Twą twarz",
+                  "Chwała Twa wypełnia nas",
+                  "Obecności Twojej blask",
+                  "Gdy wielbimy Ciebie, wiem",
+                  "Jesteś tu",
+                  "Chwała, cześć",
+                  "Mądrość, moc, błogosławieństwo",
+                  "Na wieki, na wieki"
+            ]
+      },
+      {
+            "title": "NIECH PAN UDZIELI MOCY SWEMU LUDOWI",
+            "author": "ŚPIEWNIK (8).pdf",
+            "lyrics": [
+                  "Niech Pan udzieli mocy swemu ludowi,",
+                  "Niech Pan błogosławi swój lud.",
+                  "Niech Pan udzieli mocy nam,",
+                  "Darząc nas pokojem."
+            ]
+      },
+      {
+            "title": "KARMISZ MNIE DO SYTA",
+            "author": "ŚPIEWNIK (8).pdf",
+            "lyrics": [
+                  "Karmisz mnie do syta,",
+                  "Twą miłością Ojcze.",
+                  "Karmisz mnie do syta,",
+                  "Bym nie ustał w drodze."
+            ]
+      },
+      {
+            "title": "JEGO MIŁOŚĆ",
+            "author": "ŚPIEWNIK (8).pdf",
+            "lyrics": [
+                  "Jego miłość zakrywa grzech,",
+                  "Ona nie pamięta złego,",
+                  "Jego krew największy dar dla każdego.",
+                  "Jego imię potężna moc,",
+                  "Jezus drogą, prawdą, życiem.",
+                  "Emmanuel, Bóg pośród nas, Odkupiciel.",
+                  "Ref: Bóg w łasce swej do nas zniżył się.",
+                  "Pozostawił chwałę nieba,",
+                  "Jezus wycierpiał każdy trud,",
+                  "żebyś żył i już się nie bał / x2",
+                  "Jezus królem królów jest.",
+                  "Nasza wolność tylko w nim / x2",
+                  "Tylko Tobie należy się chwała.",
+                  "Tylko Tobie należy się cześć.",
+                  "Tylko Tobie będziemy się kłaniać",
+                  "Jezu!"
+            ]
+      },
+      {
+            "title": "NIECHAJ ZSTĄPI DUCH TWÓJ",
+            "author": "ŚPIEWNIK (8).pdf",
+            "lyrics": [
+                  "Niechaj zstąpi Duch Twój i odnowi Ziemię",
+                  "Życiodajny spłynie deszcz na spragnione serce",
+                  "Obmyj mnie i uświęć mnie",
+                  "Uwielbienia niech popłynie pieśń.",
+                  "Chwała Jezusowi który za mnie życie dał",
+                  "Chwała temu, który pierwszy umiłował mnie",
+                  "Jezus, tylko Jezus Panem jest."
+            ]
+      },
+      {
+            "title": "O PIĘKNOŚCI NIESTWORZONA",
+            "author": "ŚPIEWNIK (8).pdf",
+            "lyrics": [
+                  "O Piękności niestworzona, kto Ciebie raz poznał,",
+                  "Ten nic innego pokochać nie może.",
+                  "Czuję, że tonę w Nim, jako jedno ziarenko piasku",
+                  "W bezdennym oceanie.",
+                  "Czuję, że nie ma ani jednej kropli krwi we mnie,",
+                  "Która by nie płonęła miłością ku Tobie.",
+                  "Miłosierdzie Boże x3"
+            ]
+      },
+      {
+            "title": "JEDEN DUCH",
+            "author": "ŚPIEWNIK (8).pdf",
+            "lyrics": [
+                  "Jeden Duch i jedno serce",
+                  "Ożywiały wszystkich wierzących",
+                  "Żaden z nich nie nazywał swoim",
+                  "Tego co posiadał",
+                  "Apostołowie z wielką mocą",
+                  "Świadczyli o zmartwychwstaniu",
+                  "Pana Jezusa",
+                  "A wszyscy oni mieli Wielką Łaskę",
+                  "Wielką Łaskę",
+                  "Wielką Łaskę."
+            ]
+      },
+      {
+            "title": "NIE BÓJCIE SIĘ ŻYĆ DLA MIŁOŚCI",
+            "author": "ŚPIEWNIK (8).pdf",
+            "lyrics": [
+                  "Nie bójcie się żyć dla Miłości",
+                  "Dla tej Miłości warto żyć"
+            ]
+      },
+      {
+            "title": "UKOJENIE",
+            "author": "ŚPIEWNIK (8).pdf",
+            "lyrics": [
+                  "Tylko w Bogu moje jest zbawienie",
+                  "W nim jedynie duszy ukojenie",
+                  "Moja chwała i skała",
+                  "W nim pokładam mą nadzieję",
+                  "Ufaj mu kościele w każdym czasie",
+                  "Wylewajcie przed nim serca wasze",
+                  "Ludzie lżejsi niż tchnienie",
+                  "Tylko w Bogu jest zbawienie",
+                  "Sprawiedliwy jest nasz Pan",
+                  "Każdy zbierze to co siał",
+                  "Kto uwierzy nie zawiedzie się",
+                  "Przychodzimy przed Twój tron",
+                  "Chcemy widzieć Twoją moc",
+                  "I doświadczyć Panie łaski Twej"
+            ]
+      },
+      {
+            "title": "DOTKNIJ PANIE MOICH OCZU",
+            "author": "ŚPIEWNIK (8).pdf",
+            "lyrics": [
+                  "Dotknij Panie moich oczu abym przejrzał",
+                  "Dotknij Panie moich warg abym przemówił",
+                  "z uwielbieniem.",
+                  "Dotknij Panie mego serca i oczyść je",
+                  "Niech Twój Święty Duch dziś ogarnia mnie"
+            ]
+      },
+      {
+            "title": "DUCHU MIŁOŚCI WYLEWAJ SIĘ NA NAS",
+            "author": "ŚPIEWNIK (8).pdf",
+            "lyrics": [
+                  "Duchu miłości wylewaj się na nas",
+                  "z przebitego serca",
+                  "Jezusa, Jezusa!"
+            ]
+      },
+      {
+            "title": "NASZ BÓG JEST WIELKI",
+            "author": "ŚPIEWNIK (8).pdf",
+            "lyrics": [
+                  "Wodę zamieniłeś w wino",
+                  "Ślepi przy Tobie znów widzą, któż jest jak Ty? Tylko Ty?",
+                  "Blaskiem rozświetlasz ciemności",
+                  "Człowiek powstaje z marności, któż jest jak Ty? Tylko Ty?",
+                  "Nasz Bóg jest wielki, nasz Bóg jest silny",
+                  "Boże nikt inny nie równa się z Tobą.",
+                  "Nasz Bóg uzdrawia, jest wszechmogący.",
+                  "Nasz Bóg, Nasz Bóg.",
+                  "Jeśli nasz Bóg jest przy nas już nic nas nie zatrzyma!",
+                  "Jeśli nasz Bóg jest z nami, któż jest przeciwko nam? /x2",
+                  "Któż jest przeciwko nam?"
+            ]
+      },
+      {
+            "title": "JEDEN JEST TYLKO PAN",
+            "author": "ŚPIEWNIK (8).pdf",
+            "lyrics": [
+                  "1. Jeden jest tylko Pan",
+                  "Tutaj jest Jego dom",
+                  "Klęknijcie wszyscy którzy tu wchodzicie",
+                  "I razem chwalmy Go.",
+                  "Ref: Miejsce to wybrał Pan,aby wysłuchać nas",
+                  "Śpiewajmy wszyscy słudzy Jego domu",
+                  "Bogu oddajmy cześć / x2",
+                  "2. On mieszka z nami tu",
+                  "By przyjacielem być",
+                  "Składamy dzięki za miłość i dary",
+                  "Którymi łączy nas."
+            ]
+      },
+      {
+            "title": "CHWALCIE PANA NIEBIOS",
+            "author": "ŚPIEWNIK (8).pdf",
+            "lyrics": [
+                  "Chwalcie Pana Niebios",
+                  "Chwalcie Go na cytrze",
+                  "Chwalcie Króla świata",
+                  "Bo On Bogiem jest",
+                  "1. Chwal duszo moja Pana mego Króla",
+                  "Chcę chwalić Pana jak długo będę żył",
+                  "Chcę śpiewać memu Bogu póki będę istniał",
+                  "Chcę Go wysławiać śpiewać Alleluja!",
+                  "2. Szczęśliwy ten, któremu Pan jest pomocą",
+                  "Kto ma nadzieję w Panu Bogu swym",
+                  "W Bogu który stworzył Niebo i Ziemię",
+                  "Wszystko co żyje śpiewa: Alleluja!",
+                  "3. Pan Bóg króluje, wesel się Ziemio",
+                  "Bóg Twój Syjonie przez pokolenia",
+                  "On dał Ci życie, On dał Ci wszystko",
+                  "Śpiewaj Mu, wysławiaj Go, Alleluja!"
+            ]
+      },
+      {
+            "title": "NASZ PAN JEST POTĘŻNY",
+            "author": "ŚPIEWNIK (8).pdf",
+            "lyrics": [
+                  "Nasz Pan jest potężny w mocy Swej,",
+                  "Króluje nad nami dziś",
+                  "Z nieba rządzi w mocy miłości, mądrości swej."
+            ]
+      },
+      {
+            "title": "BO GÓRY MOGĄ USTĄPIĆ",
+            "author": "ŚPIEWNIK (8).pdf",
+            "lyrics": [
+                  "Bo góry mogą ustąpić i pagórki się zachwiać",
+                  "ale miłość moja nie odstąpi od ciebie",
+                  "Ref. Tak mówi Pan /x3",
+                  "który kocha ciebie, ciebie, ciebie i mnie",
+                  "Choćby matka, która kocha dziecko",
+                  "swego łona opuściła je,",
+                  "Ja, Bóg Ojciec wszechmogący",
+                  "nigdy, nigdy nie opuszczę cię."
+            ]
+      },
+      {
+            "title": "KIEDY CICHNIE GWAR",
+            "author": "ŚPIEWNIK (8).pdf",
+            "lyrics": [
+                  "Kiedy cichnie gwar i wszystko kończy się",
+                  "Wtedy szukam Cię.",
+                  "Chcę Ci przynieść coś, co wartościowe jest",
+                  "co ucieszy Cię.",
+                  "Chcę dać Ci więcej niż pieśń, bo wiem, że",
+                  "śpiew nie jest tym, czego ode mnie chcesz",
+                  "Ty patrzysz głębiej niż my, mimo pozorów spraw,",
+                  "Ty patrzysz w duszę mą.",
+                  "Ref.:",
+                  "Powracam znowu, by wielbić Ciebie,",
+                  "By wywyższać Cię,",
+                  "wywyższać Ciebie wciąż.",
+                  "Przepraszam Ciebie za moje grzechy,",
+                  "Chcę wywyższać Cię,",
+                  "wywyższać Ciebie wciąż."
+            ]
+      },
+      {
+            "title": "ADONAI (TY PANIE TRWASZ)",
+            "author": "ŚPIEWNIK (8).pdf",
+            "lyrics": [
+                  "1. Ty Panie trwasz",
+                  "W sercach gdzie płoniesz sam",
+                  "Adonai Adonai",
+                  "Tchnij Miłość sobą",
+                  "Dotknij nam ran",
+                  "Adonai Adonai",
+                  "Ref: (Nie jestem sam)",
+                  "Panie, Panie",
+                  "2. Z ust będziesz mych",
+                  "Sądzić nie z ofiar krwi",
+                  "Adonai Adonai",
+                  "Niech się otworzą w miłosierdziu twym",
+                  "Adonai Adonai",
+                  "3. Jest w duszy chęć",
+                  "Ponieść krzyż z Tobą nieść",
+                  "Adonai Adonai",
+                  "Zrań mnie miłością",
+                  "Miłować ucz",
+                  "Adonai Adonai"
+            ]
+      },
+      {
+            "title": "DUCHU ŚWIĘTY PRZYJDŹ",
+            "author": "ŚPIEWNIK (8).pdf",
+            "lyrics": [
+                  "Duchu Święty przyjdź x4",
+                  "Niech wiara zagości,",
+                  "Niech nadzieja zagości,",
+                  "Niech miłość zagości w nas. /2x",
+                  "Wołamy przyjdź"
+            ]
+      },
+      {
+            "title": "JAK WIELKI JEST BÓG",
+            "author": "ŚPIEWNIK (8).pdf",
+            "lyrics": [
+                  "1. To On, nasz Pan i Król",
+                  "odziany w majestat Swój,",
+                  "Ziemio, raduj się x2",
+                  "Okrywa światłość Go,",
+                  "ucieka ciemność i zło",
+                  "Ci drży na Jego głos x2",
+                  "Ref: Jak wielki jest Bóg,",
+                  "śpiewaj ze mną,",
+                  "wielki jest Bóg,",
+                  "Niech wszyscy wiedzą",
+                  "Wielki jest nasz Bóg",
+                  "2. On czas w swej dłoni ma,",
+                  "od wieków na wieki trwa,",
+                  "początkiem, końcem On x2",
+                  "Jedyny w Trójcy Bóg,",
+                  "Ojciec, Syn i Duch,",
+                  "Barankiem jest i lwem x2",
+                  "Na wieki godzien jest",
+                  "przyjąć chwałę, moc i cześć,",
+                  "ogłaszać chcę",
+                  "jak wielki jest Bóg."
+            ]
+      },
+      {
+            "title": "JEZUS TO KRÓL",
+            "author": "ŚPIEWNIK (8).pdf",
+            "lyrics": [
+                  "Jezus to Król, dziś Go wywyższamy,",
+                  "Jezus to Król, dziś uwielbiamy Go / x2",
+                  "Nasze życie, nasze pieśni oddajemy Jezusowi",
+                  "Laj, laj, laj…"
+            ]
+      },
+      {
+            "title": "ZANIM POWIEM SŁOWO",
+            "author": "ŚPIEWNIK (8).pdf",
+            "lyrics": [
+                  "Nie ma za trudnych spraw",
+                  "nie ma zbyt łatwych też dla Ciebie, Panie",
+                  "Ty przecież wszystko wiesz",
+                  "Każdą potrzebę znasz",
+                  "słyszysz mój śmiech i płacz",
+                  "Dla Ciebie Panie to przecież ważne jest",
+                  "Ref: Ja wiem, że wszystko jest możliwe",
+                  "że nie ma rzeczy bez znaczenia",
+                  "dlatego modlę się do Ciebie, dobry Panie",
+                  "I wiem że zanim powiem słowo",
+                  "Ty Boże znasz już całe zdanie",
+                  "Uwielbiam Cię, Twoja wola niech się stanie."
+            ]
+      },
+      {
+            "title": "JEZU TYŚ JEST ŚWIATŁOŚCIĄ MEJ DUSZY",
+            "author": "ŚPIEWNIK (8).pdf",
+            "lyrics": [
+                  "Jezu Tyś jest światłością mej duszy",
+                  "Niech ciemność ma nie przemawia do mnie już",
+                  "Jezu Tyś jest światłością mej duszy",
+                  "Daj mi moc przyjąć dziś miłość Twą"
+            ]
+      },
+      {
+            "title": "PODNIEŚ MNIE JEZU",
+            "author": "ŚPIEWNIK (8).pdf",
+            "lyrics": [
+                  "Podnieś mnie Jezu i prowadź do Ojca",
+                  "Podnieś mnie Jezu i prowadź do Ojca",
+                  "Zanurz mnie w wodzie Jego miłosierdzie.",
+                  "Amen Amen."
+            ]
+      },
+      {
+            "title": "JAMNEŃSKA PIEŚŃ WIECZORNA",
+            "author": "ŚPIEWNIK (8).pdf",
+            "lyrics": [
+                  "O Maryjo Piękna Pani",
+                  "I Królowo całej ziemi,",
+                  "Proszą słudzy Ci oddani",
+                  "Prowadź nas Twymi ścieżkami.",
+                  "Panno święta, Matko miła",
+                  "Tyś szatana zwyciężyła",
+                  "Tobie Pani my poddani",
+                  "uwielbienie niesiem w dani.",
+                  "Tyś Maryjo pewna droga",
+                  "bo prowadzisz nas do Boga",
+                  "prowadź Matko nas na ziemi",
+                  "broń przed pokusami złemi.",
+                  "O Jamneńska kwietna Pani",
+                  "spojrzyj na nas tu zebranych",
+                  "weź w opiekę naszą wioskę",
+                  "oddal od nas każdą troskę.",
+                  "Matko stawiaj się za nami",
+                  "By nie zmogła nas pokusa",
+                  "Twymi chcemy iść drogami",
+                  "przez Cię dojdzie do Jezusa.",
+                  "Tyś jest Matką więc Ci składam",
+                  "Ciało zmysły i czym władam",
+                  "przyjmij serce w podarunku",
+                  "a mnie pociesz w mym frasunku",
+                  "A gdy koniec życia mego",
+                  "przyjdzie z ręki Najwyższego",
+                  "daj mi pomoc w tym momencie",
+                  "abym mógł umierać święcie."
+            ]
+      },
+      {
+            "title": "NIE UMRĘ",
+            "author": "ŚPIEWNIK (8).pdf",
+            "lyrics": [
+                  "1. Bądź uwielbiony Boże mój, nadziejo ma,",
+                  "Przy Tobie znów nie lękam się,",
+                  "Bo miłość Twa sprawi, że",
+                  "Ref: Nie umrę, ale będę żyć,",
+                  "Bo Bogiem mym Chrystus Pan.",
+                  "Jak on powstanę z martwych i",
+                  "Wejdę do Jego bram.",
+                  "2. Bądź zawsze ze mną, Boże mój, miłości ma,",
+                  "Bym innym głosił imię Twe,",
+                  "Bo z nimi wraz",
+                  "3. O Jezu przemień siebie w mnie, ostojo ma,",
+                  "Daj mi na wieki sławić Cię,",
+                  "By słyszał Świat O tym, że"
+            ]
+      },
+      {
+            "title": "NIC NIE MUSISZ MÓWIĆ NIC",
+            "author": "ŚPIEWNIK (8).pdf",
+            "lyrics": [
+                  "Nic nie musisz mówić nic",
+                  "Odpocznij we mnie",
+                  "Czuj się bezpiecznie / x2",
+                  "Pozwól kochać się",
+                  "Miłość pragnie Ciebie / x2"
+            ]
+      },
+      {
+            "title": "OCEANY",
+            "author": "ŚPIEWNIK (8).pdf",
+            "lyrics": [
+                  "1. Ty wzywasz na nieznane wody,",
+                  "Niepewnie, więc swój stawiam krok",
+                  "W ukryciu Ciebie odnajduję",
+                  "I wierzyć chcę, chociaż wokół toń",
+                  "O Panie wzywam imię Twe",
+                  "I ponad fale wznoszę wzrok, gdzie morze drży",
+                  "W ramionach Twych wytchnienie me,",
+                  "Bo Ciebie mam i jestem Twój",
+                  "2. W głębinach łaska Twa wystarcza,",
+                  "Twa mocna dłoń ochrania mnie",
+                  "Gdy krok niepewny, strach otacza,",
+                  "Ty nigdy nie, nie zawiedziesz mnie",
+                  "O Panie wzywam imię Twe",
+                  "I ponad fale wznoszę wzrok, gdzie morze drży",
+                  "W ramionach Twych wytchnienie me,",
+                  "Bo Ciebie mam i jestem Twój",
+                  "I jestem Twój",
+                  "Duchu Święty naucz ufać Ci bez granic",
+                  "I poprowadź mnie po wodzie,",
+                  "Gdziekolwiek mnie powołasz",
+                  "Zabierz dalej niż mnie nogi mogą ponieść,",
+                  "Będę wierzył coraz mocniej,",
+                  "W obecności mego Zbawcy / x2",
+                  "O Panie wzywam imię Twe",
+                  "I ponad fale wznoszę wzrok, gdzie morze drży",
+                  "W ramionach Twych wytchnienie me,",
+                  "Bo Ciebie mam i jestem Twój"
+            ]
+      },
+      {
+            "title": "KTO ZAUFAŁ CI",
+            "author": "ŚPIEWNIK (8).pdf",
+            "lyrics": [
+                  "Kto zaufał Ci, ten uwierzył,",
+                  "że nie zawstydzi go nic",
+                  "Moc Twego ramienia jest skałą schronienia",
+                  "kiedy skrada się wróg.",
+                  "Szczęśliwy ten, kto uwierzył,",
+                  "że nie zawstydzi go nic",
+                  "Moc Twego ramienia jest skałą schronienia",
+                  "Kiedy skrada się wróg",
+                  "Zawsze będę ufać,",
+                  "pomnażać wszelką Twą chwałę",
+                  "I głosić Twą sprawiedliwość,",
+                  "gdy sięga ona aż do nieba",
+                  "Ubierasz mą duszę w dostojność",
+                  "To co umarłe ożywiasz",
+                  "Raduje się moje serce,",
+                  "wierność Wszechmocnego nieustannie",
+                  "opowiadać chce."
+            ]
+      },
+      {
+            "title": "MIŁOŚĆ TWA PANIE",
+            "author": "ŚPIEWNIK (8).pdf",
+            "lyrics": [
+                  "Miłość Twa Panie uskrzydla, kształtuje",
+                  "z Tobą chcę chodzić oświetlasz mą drogę",
+                  "Uwiodłeś mnie Panie miłością swą,",
+                  "a ja dałem się uwieść, dałem się uwieść.",
+                  "Bo nikt nie ma większej Miłości od tej",
+                  "Gdy ktoś życie oddaje za swoich przyjaciół",
+                  "TY DAŁEŚ ŻYCIE x 4"
+            ]
+      },
+      {
+            "title": "TCHNIJ MOC",
+            "author": "ŚPIEWNIK (8).pdf",
+            "lyrics": [
+                  "Ref: Tchnij moc, tchnij miłość",
+                  "i przenikaj życie me. (2x)",
+                  "1. Bo całym sercem swym",
+                  "oddaję Ci cześć,",
+                  "bo każdą myślą swą oddaję Ci cześć.",
+                  "I z całej siły swej oddaję Ci cześć,",
+                  "o, Panie mój!",
+                  "2. Bo całym sercem swym uwielbiać Cię chcę.",
+                  "Bo każdą myślą swą uwielbiać Cię chcę.",
+                  "I z całej siły swej uwielbiać Cię chcę,",
+                  "o, Panie mój!"
+            ]
+      },
+      {
+            "title": "WIĘCEJ MIŁOŚCI",
+            "author": "ŚPIEWNIK (8).pdf",
+            "lyrics": [
+                  "Więcej miłości",
+                  "więcej mocy",
+                  "wiecej Ciebie w życiu mym / x2",
+                  "Całym swoim sercem uwielbiam Ciebie",
+                  "cala swoją duszą uwielbiam Ciebie",
+                  "całym swoim życiem uwielbiam Ciebie",
+                  "Tyś Bogiem mym jest",
+                  "Tyś Bogiem mym jest!!!"
+            ]
+      },
+      {
+            "title": "PAN BLISKO JEST",
+            "author": "ŚPIEWNIK (8).pdf",
+            "lyrics": [
+                  "Pan blisko jest, oczekuj Go",
+                  "Pan blisko jest, w Nim serca moc"
+            ]
+      },
+      {
+            "title": "NIEPOJĘTY, NIEZMIERZONY",
+            "author": "ŚPIEWNIK (8).pdf",
+            "lyrics": [
+                  "1. Z głębokości mórz aż po szczyty gór",
+                  "Stworzenie objawia Majestat Twój",
+                  "Od kolorów jesieni po wiosenny deszcz",
+                  "Wszystko śpiewa Ci pieśń pełną cudownych słów",
+                  "ogłaszając",
+                  "Ref: Niepojęty, niezmierzony",
+                  "gwiazdy stworzyłeś na niebie",
+                  "i każdą z nich znasz",
+                  "Wspaniałym Bogiem Tyś jest",
+                  "Wszechmogący nieskończony",
+                  "W zachwycie klękamy przed Tobą",
+                  "By wyznać to że",
+                  "wspaniałym Bogiem Tyś jest",
+                  "2. Kto uwalnia błyskawic moc w czasie burz",
+                  "Kto maluje kolory porannych zórz",
+                  "Słońce stworzył na niebie i dał mu Swą moc",
+                  "Orzeźwienie przynosi w gwieździstą noc",
+                  "Tylko Ty",
+                  "Ref: Niepojęty, niezmierzony",
+                  "Gwiazdy stworzyłeś na niebie",
+                  "I każdą z nich znasz",
+                  "Wspaniałym Bogiem Tyś jest",
+                  "Zawsze dobry miłujący",
+                  "Ty znasz moje serce i mimo to",
+                  "Wciąż kochasz mnie",
+                  "Wspaniałym Bogiem Tyś jest"
+            ]
+      },
+      {
+            "title": "BŁOGOSŁAWIENI MIŁOSIERNI",
+            "author": "ŚPIEWNIK (8).pdf",
+            "lyrics": [
+                  "1. Wznoszę swe oczy ku górom skąd przyjdzie mi pomoc,",
+                  "Pomoc od Pana, wszak Bogiem On miłosiernym jest.",
+                  "2. Kiedy zbłądzimy sam szuka nas, by w swe ramiona wziąć,",
+                  "Rany uleczyć krwią swoich ran, nowe życie tchnąć.",
+                  "Ref: Błogosławieni miłosierni,",
+                  "Albowiem oni miłosierdzia dostąpią",
+                  "Błogosławieni miłosierni,",
+                  "Albowiem oni miłosierdzia dostąpią",
+                  "3. Gdyby nam Pan nie odpuścił win, któż okstać by się mógł?",
+                  "Lecz On przebacza, przeto i my czyńmy jak nasz Bóg!",
+                  "4. Pan Syna krwią zmazał wszelki dług,",
+                  "Syn z grobu żywy wstał,",
+                  "Panem jest Jezus, mówi w nas Duch,",
+                  "Niech to widzi świat",
+                  "Więc odrzuć lęk i wiernym bądź! Swe troski Panu złóż!",
+                  "I ufaj bo zmartwychwstał I wciąż żyje Pan, twój Bóg!"
+            ]
+      },
+      {
+            "title": "ROZPIĘTY NA RAMIONACH",
+            "author": "ŚPIEWNIK (8).pdf",
+            "lyrics": [
+                  "Ref: Rozpięty na ramionach",
+                  "Jak sokół na niebie.",
+                  "Chrystusie, Synu Boga,",
+                  "Spójrz proszę na ziemię.",
+                  "1. Na ruchliwe ulice,",
+                  "Zabieganych ludzi.",
+                  "Gdy noc się już kończy,",
+                  "A ranek się budzi.",
+                  "Uśmiechnij się przyjaźnie",
+                  "Z wysokiego krzyża.",
+                  "Do ciężko pracujących,",
+                  "Cierpiących na pryczach.",
+                  "2. Pociesz zrozpaczonych,",
+                  "chleba daj głodującym.",
+                  "Modlących się wysłuchaj",
+                  "i wybacz umierającym.",
+                  "Spójrz cierpienia sokole",
+                  "na wszechświat, na ziemię.",
+                  "Na cichy ciemny Kościół,",
+                  "dziecko wzywające Ciebie.",
+                  "3. A gdy będziesz nas sądził,",
+                  "Boskie Miłosierdzie.",
+                  "Prosimy, Twoje dzieci,",
+                  "nie sądź na miarę siebie."
+            ]
+      },
+      {
+            "title": "TAK MNIE SKRUSZ",
+            "author": "ŚPIEWNIK (8).pdf",
+            "lyrics": [
+                  "Tak mnie skrusz,",
+                  "Tak mnie złam,",
+                  "Tak mnie wypal Jezu",
+                  "Byś został tylko Ty",
+                  "Byś został tylko Ty",
+                  "Jedynie Ty.",
+                  "Tak cię złamie,",
+                  "tak cię skrusze,",
+                  "tak wypale ciebie,",
+                  "bym został tylko Ja,",
+                  "bym został tylko Ja,",
+                  "jedynie Ja!"
+            ]
+      },
+      {
+            "title": "PRAWDA JEDYNA",
+            "author": "ŚPIEWNIK (8).pdf",
+            "lyrics": [
+                  "1. Prawda jedyna słowa Jezusa z Nazaretu",
+                  "że swego syna posłał z niebios Bóg na świat.",
+                  "Aby niewinnie cierpiąc zmarł za nasze grzechy",
+                  "I w pohańbieniu przyjął winy wszystkich nas.",
+                  "Ref.: Dzięki Ci Boże mój za ten krzyż",
+                  "Który Jezus cierpiał za mnie,",
+                  "Jezus cierpiał za mnie / x2",
+                  "2. Uwierz w Jezusa przecież On za ciebie umarł",
+                  "Z miłości do nas przyszedł z nieba na ten świat",
+                  "Błogosławiony ten kto wierzy choć nie widział",
+                  "Zaufaj dziś Bogu a na wieki będziesz żył."
+            ]
+      },
+      {
+            "title": "WIERZĘ W CIEBIE PANIE",
+            "author": "ŚPIEWNIK (8).pdf",
+            "lyrics": [
+                  "1. Wierzę w Ciebie, Panie, coś mnie obmył z win",
+                  "Wierzę, że człowiekiem stał się Boży Syn",
+                  "Miłość Ci kazała krzyż na plecy brać",
+                  "W tabernakulum zostałeś, aby z nami trwać.",
+                  "Jesteś przewodnikiem nam do wieczności bram",
+                  "Ty przygarniasz nas do siebie.",
+                  "2. Tyś jest moim życiem, boś Ty żywy Bóg",
+                  "Tyś jest moją drogą, najpiękniejszą z dróg",
+                  "Tyś jest moją prawdą, co oświeca mnie",
+                  "Boś odwiecznym Synem Ojca, który wszystko wie.",
+                  "Nic mnie nie zatrwoży już wśród najcięższych burz",
+                  "Bo Ty, Panie, jesteś ze mną.",
+                  "3. Tyś jest moja siłą, w Tobie moja moc",
+                  "Tyś jest mym pokojem w najburzliwszą noc",
+                  "Tyś jest mym ratunkiem, gdy zagraża toń",
+                  "Moją słabą ludzką rękę ujmij w swoją dłoń.",
+                  "Z Tobą przejdę poprzez świat w ciągu życia lat",
+                  "I nic złego mnie nie spotka.",
+                  "4. Tobie Boże Ojcze wiarę swoją dam",
+                  "w Tobie Synu Boży ufność swoją mam,",
+                  "Duchu Święty Boże w serce moje zstąp",
+                  "i miłości Bożej ziarno wrzuć w me serce",
+                  "w głąb duszy mojej rozpal żar siedmioraki dar daj mi stać się",
+                  "Bożą rolą."
+            ]
+      },
+      {
+            "title": "NAUCZ MNIE MIŁOŚCI KRZYŻA",
+            "author": "ŚPIEWNIK (8).pdf",
+            "lyrics": [
+                  "Ref: Naucz mnie miłości krzyża",
+                  "Naucz mnie miłości krzyża",
+                  "Wciąż umierać razem z Tobą - Baranku",
+                  "Naucz mnie miłości krzyża",
+                  "Naucz mnie miłości krzyża",
+                  "We krwi Twojej płukać szaty - Baranku.",
+                  "1. Spójrz Panie na słabe serce moje",
+                  "Które pragnie rozdawać Twą miłość",
+                  "Nie tylko przyjaciołom, a nade wszystko wrogom",
+                  "Ty ukryty w mym wnętrzu kochaj.",
+                  "2. Pełen miłości patrzysz z drzewa krzyża",
+                  "Rozciągając szeroko ramiona",
+                  "Niech każde cierpienie przybliża mnie do Ciebie",
+                  "Naucz mnie ofiary Baranku milczący."
+            ]
+      },
+      {
+            "title": "CHWALĘ CIEBIE PANIE",
+            "author": "ŚPIEWNIK (8).pdf",
+            "lyrics": [
+                  "Chwalę Ciebie Panie",
+                  "i uwielbiam,",
+                  "Wznoszę w górę swoje ręce,",
+                  "Uwielbiając Imię Twe.",
+                  "Bo wielkiś Ty",
+                  "Wielkie dzieła czynisz dziś",
+                  "Nie dorówna Tobie nikt."
+            ]
+      },
+      {
+            "title": "ZMARTWYCHWSTAŁ PAN",
+            "author": "ŚPIEWNIK (8).pdf",
+            "lyrics": [
+                  "Ref.:",
+                  "Zmartwychwstał Pan i żyje dziś,",
+                  "blaskiem jaśnieje noc",
+                  "Nie umrę, nie lecz będę żył,",
+                  "Pan okazał swą moc",
+                  "Krzyż to jest brama Pana,",
+                  "jeśli chcesz przez nią wejdź",
+                  "Zbliżmy się do ołtarza,",
+                  "Bogu oddajmy cześć.",
+                  "1. Dzięki składajmy Mu, bo wielka jest jego łaska",
+                  "Z grobu powstał dziś Pan, a noc jest pełna blasku",
+                  "Chcę dziękować Mu i chcę Go dziś błogosławić",
+                  "Jezus, mój Pan i Bóg, On przyszedł aby nas zbawić.",
+                  "2. Lepiej się uciec do Pana, niż zaufać książętom",
+                  "Pan, moja moc i pieśń, podtrzymał gdy mnie popchnięto",
+                  "Już nie będę się bał – cóż może zrobić mi śmierć?",
+                  "Nie, nie lękam się i śpiewam chwały pieśń.",
+                  "3. Odrzucony Pan stał się kamieniem węgielnym",
+                  "Pan wysłuchał mnie, On jest zbawieniem mym",
+                  "Cudem staje się noc, gdy w dzień jest przemieniona",
+                  "Tańczmy dla niego dziś, prawica Pańska wzniesiona."
+            ]
+      },
+      {
+            "title": "PRZYCHODZISZ PANIE",
+            "author": "ŚPIEWNIK (8).pdf",
+            "lyrics": [
+                  "Przychodzisz, Panie, mimo drzwi zamkniętych.",
+                  "Jezu zmartwychwstały ze śladami męki.",
+                  "Ty jesteś z nami, poślij do nas Ducha.",
+                  "Panie nasz i Boże, uzdrów nasze życie."
+            ]
+      },
+      {
+            "title": "OTO SĄ BARANKI MŁODE",
+            "author": "ŚPIEWNIK (8).pdf",
+            "lyrics": [
+                  "Ref: Oto są baranki młode,",
+                  "oto ci, co zawołali alleluja!",
+                  "Dopiero przyszli do zdrojów,",
+                  "światłością się napełnili,",
+                  "Alleluja, alleluja!",
+                  "1. Na Baranka Pańskich godach,",
+                  "W szat świątecznych czystej bieli,",
+                  "Po krwawego morza wodach",
+                  "Nieśmy Panu pieśń weseli.",
+                  "2. W swej miłości wiekuistej",
+                  "On nas swoją Krwią częstuje,",
+                  "Nam też Ciało swe przeczyste",
+                  "Chrystus kapłan ofiaruje.",
+                  "3. Na drzwi świętą Krwią skropione",
+                  "Anioł mściciel z lękiem wziera,",
+                  "Pędzi morze rozdzielone,",
+                  "Wrogów w nurtach swych pożera.",
+                  "4. Już nam Paschą Tyś jest Chryste,",
+                  "Wielkanocną też ofiarą,",
+                  "Tyś Przaśniki nasze czyste",
+                  "Dla dusz prostych z szczerą wiarą.",
+                  "5. O Ofiaro niebios święta,",
+                  "Ty moc piekła pokonywasz,",
+                  "Zrywasz ciężkie śmierci pęta,",
+                  "Wieniec życia nam zdobywasz.",
+                  "6. Chrystus piekło pogromiwszy",
+                  "Swój zwycięski znak roztacza,",
+                  "Niebo ludziom otworzywszy",
+                  "Króla mroków w więzy wtłacza.",
+                  "7. Byś nam wiecznie, Jezu drogi,",
+                  "Wielkanocną był radością,",
+                  "Strzeż od grzechu śmierci srogiej",
+                  "Odrodzonych Twą miłością.",
+                  "8. Chwała Ojcu i Synowi,",
+                  "który z martwych żywy wstaje",
+                  "I Świętemu też duchowi",
+                  "Niech na wieki nie ustaje."
+            ]
+      },
+      {
+            "title": "CZCIJMY JEZUSA",
+            "author": "ŚPIEWNIK (8).pdf",
+            "lyrics": [
+                  "Czcijmy Jezusa czcijmy Go x4",
+                  "Powstał z martwych x2",
+                  "i On żyje na wieki już",
+                  "Powstał z martwych x2",
+                  "Więc razem się radujmy",
+                  "Świętując zmartwychwstania ten dzień"
+            ]
+      },
+      {
+            "title": "W TOBIE JEST ŚWIATŁO",
+            "author": "ŚPIEWNIK (8).pdf",
+            "lyrics": [
+                  "W Tobie jest światło każdy mrok rozjaśni.",
+                  "W Tobie jest życie, ono śmierć zwycięża.",
+                  "Ufam Tobie, miłosierny,",
+                  "Jezu, wybaw nas."
+            ]
+      },
+      {
+            "title": "ZBAWICIEL ON PORUSZA GÓRY",
+            "author": "ŚPIEWNIK (8).pdf",
+            "lyrics": [
+                  "1. Jesteśmy Twymi dziećmi, potrzebujemy Ciebie",
+                  "miłości, która trwa",
+                  "dobroci nieskończonej, łaski i nadziei",
+                  "na wybawienie",
+                  "Ref: Zbawiciel, On porusza góry",
+                  "On może wybawić mnie",
+                  "może wybawić mnie",
+                  "na zawsze sprawca odkupienia",
+                  "zmartwychwstał, pokonał śmierć",
+                  "Jezus pokonał śmierć",
+                  "2. Weź mnie, jakim jestem",
+                  "z mym grzechem i mym lękiem",
+                  "wypełnij życie me",
+                  "Ja Tobie się oddaję, całą moją wiarę",
+                  "oddaję Tobie",
+                  "Chcę być światłem, aby poznał świat - Ciebie",
+                  "Wielki Królu, Zbawicielu nasz - Jezu"
+            ]
+      },
+      {
+            "title": "JEZUS ZWYCIĘŻYŁ",
+            "author": "ŚPIEWNIK (8).pdf",
+            "lyrics": [
+                  "Jezus zwyciężył, to wykonało się",
+                  "Szatan pokonany, Jezus złamał śmierci moc",
+                  "Jezus jest Panem, o alleluja,",
+                  "Po wieczne czasy Królem królów jest.",
+                  "Jezus jest Panem x4",
+                  "Tylko Jezus jest Panem",
+                  "Jezus jest Panem",
+                  "On jest Panem ziemi tej."
+            ]
+      },
+      {
+            "title": "WYKRZYKUJCIE NA CZEŚĆ PANA",
+            "author": "ŚPIEWNIK (8).pdf",
+            "lyrics": [
+                  "Ref. Wykrzykujcie na cześć Pana",
+                  "Wszystkie ziemie",
+                  "Wśród okrzyków i radości",
+                  "wysławiajcie Go.",
+                  "1. Wiedzcie, że Pan jest Bogiem",
+                  "On sam stworzył nas",
+                  "Jesteśmy Jego ludem",
+                  "Jesteśmy Jego własnością.",
+                  "2. W Jego bramy wstępujcie z dziękczynieniem",
+                  "Wśród hymnów w Jego przedsionki",
+                  "Błogosławcie imię Jego",
+                  "Chwalcie Pana dziś.",
+                  "3. Albowiem dobry jest Pan",
+                  "Łaskawość Jego na wieki",
+                  "Albowiem dobry jest Pan",
+                  "Jego wierność przez pokolenia."
+            ]
+      },
+      {
+            "title": "AMEN AMEN ALLELUJA",
+            "author": "ŚPIEWNIK (8).pdf",
+            "lyrics": [
+                  "Alleluja, Alleluja,",
+                  "Amen Amen, Alleluja!",
+                  "1. Pokłońmy się przed Nim - On naszym Panem jest",
+                  "2. Radujmy się bracia (siostry, wszyscy)",
+                  "3. Jezus Chrystus Zmartwychwstał",
+                  "4. Posyła nam Ducha",
+                  "5. On dał nam Swą Matkę",
+                  "6. On do nas powróci"
+            ]
+      },
+      {
+            "title": "NIE MĄDROŚĆ ŚWIATA TEGO",
+            "author": "ŚPIEWNIK (8).pdf",
+            "lyrics": [
+                  "Marana tha! /x4",
+                  "Ref: Nie mądrość świata tego",
+                  "Lecz Pana ukrzyżowanego",
+                  "Głosimy aż przyjdzie znów /x2",
+                  "1. Bo Chrystus Jezus skałą serca mego",
+                  "Odsunął kamień, serce z ciała dał mi swego",
+                  "By nas na nowo zrodzić - wstąpił w niebo",
+                  "Aby świętego Ducha zesłać nam dlatego",
+                  "2. Zbawienie swoje z wiarą spożywajcie",
+                  "Zrodzeni w ogniu z Ducha życiem rozgłaszajcie",
+                  "Że tego któregośmy krzyżowali",
+                  "Bóg wezwał z martwych i do swojej chwały,",
+                  "Wziął stąd",
+                  "3. Idźcie i głoście Syna Boga Panem",
+                  "Krwią Jego imię wasze w niebie zapisane",
+                  "W Jego miłości wszystkich zanurzajcie",
+                  "Królestwa Jego - niechaj przyjdzie - przyzywajcie!"
+            ]
+      },
+      {
+            "title": "WSPANIAŁY DAWCO MIŁOŚCI",
+            "author": "ŚPIEWNIK (8).pdf",
+            "lyrics": [
+                  "Wspaniały Dawco miłości,",
+                  "składamy na Twoim stole",
+                  "Wszystko, co mamy, wszystko, co mamy,",
+                  "Choć i tak to od wieków jest Twoje, Twoje"
+            ]
+      },
+      {
+            "title": "CHRYSTUS PAN, BOŻY SYN",
+            "author": "ŚPIEWNIK (8).pdf",
+            "lyrics": [
+                  "Chrystus Pan Boży Syn, Zbawca nasz zgodził się",
+                  "Wziąć mój grzech, za mnie umrzeć chciał,",
+                  "ażebym znał mój ogrom win i wiedział, że",
+                  "Krew Jego zbawia, oczyszcza i leczy",
+                  "Wywyższony bądź, Jezu Baranku mój",
+                  "Tyś jedyny odkupiciel, Tyś mój Król!",
+                  "Wywyższony bądź, Boży Baranku!",
+                  "Przed Twym tronem, dziś Najwyższy składam hołd!"
+            ]
+      },
+      {
+            "title": "BOŻE TWA ŁASKA",
+            "author": "ŚPIEWNIK (8).pdf",
+            "lyrics": [
+                  "Boże Twa łaska nad nami jest,",
+                  "Twoja miłość przychodzi wciąż,",
+                  "Działa w mocy pośród nas,",
+                  "Przenika serca, gładzi grzech.",
+                  "Ref: My chcemy,",
+                  "Więcej Ciebie, więcej łaski Twej,",
+                  "Pragniemy,",
+                  "Więcej mocy, więcej miłości Twojej."
+            ]
+      },
+      {
+            "title": "OTO STOJĘ U DRZWI",
+            "author": "ŚPIEWNIK (8).pdf",
+            "lyrics": [
+                  "Oto stoję u drzwi i kołaczę x2",
+                  "Jeśli kto posłyszy mój głos",
+                  "I drzwi otworzy,",
+                  "Wejdę do niego",
+                  "I będę z nim wieczerzał",
+                  "A on ze mną."
+            ]
+      },
+      {
+            "title": "DUCHU ŚWIĘTY TCHNIENIE OJCA",
+            "author": "ŚPIEWNIK (8).pdf",
+            "lyrics": [
+                  "1. Duchu Święty, Tchnienie Ojca,",
+                  "Dawco życia.",
+                  "Duchu Święty,",
+                  "Źródło wody żywej w nas.",
+                  "Tak pragniemy Ciebie Panie,",
+                  "jak spękana ziemia deszczu,",
+                  "jak pustynia kropli wody,",
+                  "Duchu, przyjdź. / x2",
+                  "2. Duchu Święty,",
+                  "Tyś Mądrością niezmierzoną.",
+                  "Duchu Święty,",
+                  "Ty oświetlasz drogi nam.",
+                  "I prowadzisz nas do domu,",
+                  "gdzie mieszkanie przed wiekami",
+                  "przygotował dla nas Ojciec,",
+                  "Duchu, przyjdź / x2",
+                  "Tak pragniemy Ciebie Panie,",
+                  "jak spękana ziemia deszczu,",
+                  "jak pustynia kropli wody,",
+                  "Duchu, przyjdź.",
+                  "Prowadź mnie, prowadź mnie...."
+            ]
+      },
+      {
+            "title": "WŚRÓD MILIONÓW MNIE ZNALAZŁEŚ",
+            "author": "ŚPIEWNIK (8).pdf",
+            "lyrics": [
+                  "1. Ty prowadzisz mnie, bym poznać mógł,",
+                  "Co to łzy, niemocy ból i głód.",
+                  "Gdy to poznam będę inny już, Ja wiem.",
+                  "2. Nic mi złego się nie może stać,",
+                  "Nie dosięgnie mnie losu zła pięść,",
+                  "Kiedy będę z Tobą dzień po dniu. Jak cień.",
+                  "3. Z Twoich ust słyszałem ciągle to,",
+                  "Kochaj swoich wrogów, odrzuć zło.",
+                  "Gdy tak zrobisz, będziesz bliżej mnie, Bliżej mnie.",
+                  "4. Że cierpienie drogą twoją jest,",
+                  "To wiedziałem, ale czemu nie.",
+                  "Wśród milionów wybrałeś właśnie mnie. Właśnie mnie.",
+                  "Ref. Wśród milionów mnie znalazłeś, Aby pomóc mi,",
+                  "Panie, Ty, właśnie Ty, by nakarmić",
+                  "i napoić krwią ze swoich ran,",
+                  "Panie, Ty, właśnie Ty / x2"
+            ]
+      },
+      {
+            "title": "W LEKKIM POWIEWIE",
+            "author": "ŚPIEWNIK (8).pdf",
+            "lyrics": [
+                  "W lekkim powiewie",
+                  "przychodzisz do mnie, Panie. x2",
+                  "Nie przez wicher ogromny i nie przez ogień,",
+                  "ale w lekkim powiewie przychodzisz do mnie,",
+                  "w lekkim powiewie nawiedzasz duszę mą."
+            ]
+      },
+      {
+            "title": "OCZEKUJĘ CIEBIE PANIE",
+            "author": "ŚPIEWNIK (8).pdf",
+            "lyrics": [
+                  "1. Nie chcę zbyt wysoko sięgać, Panie",
+                  "Patrzeć tam, gdzie pycha lśni i chwała",
+                  "Chociaż tak wyniosłe ich mieszkanie",
+                  "Choć zazdrości godny świata pałac",
+                  "Ref: Oczekuję Ciebie, Panie",
+                  "Jesteś mym oczekiwaniem",
+                  "Uspokajasz serce moje",
+                  "Uciszeniem jesteś i pokojem mym",
+                  "2. Nie chcę, by się wywyższało serce",
+                  "Wszystko czego pragnę to Twe progi",
+                  "W ciszy na Twym progu siedzieć będę",
+                  "Cieszyć się, że jesteś moim Bogiem",
+                  "Ref: Oczekuję Ciebie, Panie",
+                  "Jesteś mym oczekiwaniem",
+                  "Uspokajasz serce moje",
+                  "Uciszeniem jesteś i pokojem mym"
+            ]
+      },
+      {
+            "title": "ZEŚLIJ DESZCZ",
+            "author": "ŚPIEWNIK (8).pdf",
+            "lyrics": [
+                  "Przelewają się przeze mnie rzeki Twojej łaski",
+                  "Łaska za łaską, fala za falą",
+                  "Łaska za łaską, fala za falą",
+                  "Łaska za łaską, fala za falą / x4",
+                  "Ześlij deszcz, ześlij deszcz",
+                  "Otwórzcie się bramy Nieba. / x4"
+            ]
+      },
+      {
+            "title": "BŁOGOSŁAW DUSZO MOJA PANA",
+            "author": "ŚPIEWNIK (8).pdf",
+            "lyrics": [
+                  "Ref: Błogosław duszo moja Pana",
+                  "Wszystko co we mnie Jego Najświętsze Imię",
+                  "Błogosław duszo moja Pana",
+                  "Jego dobroci nigdy nie zapominaj",
+                  "1. On odpuszcza wszystkie twoje grzechy",
+                  "Leczy wszystkie twoje choroby",
+                  "Okazuje swoje miłosierdzie",
+                  "On ratuje Ciebie od zguby",
+                  "On napełnia Twoje życie dobrem",
+                  "Aż odnowi się Twoja młodość jak u orła",
+                  "Nie odpłaca według grzechów",
+                  "Nie chce wiecznie gniewać się",
+                  "On pamięta żesmy prochem",
+                  "On najlepiej wie",
+                  "2. Tak jak ojciec nad swoimi dziećmi",
+                  "Pan lituje się nad pokornym",
+                  "On oddala od nas nasze winy",
+                  "Jak daleko wschód od zachodu",
+                  "Jak wysoko niebo jest nad ziemią",
+                  "Tak jest wielka dobroć dla ludzi którzy się Go boją",
+                  "Dni człowieka są jak trawa",
+                  "Kwitnie on jak polny kwiat",
+                  "Kiedy mocniej wiatr zawieje",
+                  "Znika po nim ślad",
+                  "Błogosławcie Pana wszyscy Aniołowie",
+                  "Błogosławcie Pana wszyscy Jego ludzie",
+                  "Błogosławcie Pana wszystkie Jego dzieła",
+                  "Błogosławcie Go"
+            ]
+      },
+      {
+            "title": "DUCHU ŚWIĘTY BOŻE PRZYJDŹ",
+            "author": "ŚPIEWNIK (8).pdf",
+            "lyrics": [
+                  "Ref. Duchu Święty, Boże, przyjdź,",
+                  "Przyjdź, Duchu światło,",
+                  "Duchu ogniu, przyjdź!",
+                  "Przyjdź i rozpal nas.",
+                  "1. Przyjdź Duchu Ojca, bądź naszym światłem,",
+                  "Niech promienieje Twej chwały blask.",
+                  "2. O, Świadku prawdziwy, umocnij nas,",
+                  "Chcemy rozgłaszać: Zmartwychwstał Pan!",
+                  "3. Przyjdź, Źródło Niebieskie, przyjdź, Zdroju Życia,",
+                  "Bądź nam uzdrowieniem, moc sercom daj!",
+                  "4. O, Duchu radości, rozraduj Kościół,",
+                  "Niech płynie z serc naszych Baranka pieśń!",
+                  "5. Ty daj nam doświadczyć miłości Ojca,",
+                  "Oblicze Chrystusa objawiaj nam!",
+                  "6. Bądź nam tchnieniem życia, światła promieniem,",
+                  "Przez Ciebie jaśnieje Chrystusa Krzyż!"
+            ]
+      },
+      {
+            "title": "WIELBIĆ PANA CHCĘ",
+            "author": "ŚPIEWNIK (8).pdf",
+            "lyrics": [
+                  "Wielbić Pana chcę,",
+                  "radosną śpiewać pieśń.",
+                  "Wielbić Pana chcę,",
+                  "On źródłem życia jest."
+            ]
+      },
+      {
+            "title": "POKORNA SŁUŻEBNICO PANA",
+            "author": "ŚPIEWNIK (8).pdf",
+            "lyrics": [
+                  "Pokorna służebnico Pana",
+                  "łamiąca strzały nieprzyjaciela",
+                  "miażdżąca głowę węża.",
+                  "Bądź zawsze przy mnie",
+                  "abym stawał się",
+                  "pokornym sługą",
+                  "na wzór mego Mistrza i Pana."
+            ]
+      },
+      {
+            "title": "O PANIE TY NAM DAJESZ",
+            "author": "ŚPIEWNIK (8).pdf",
+            "lyrics": [
+                  "1. O Panie, Ty nam dajesz Ciało swe i Krew.",
+                  "Do Ciebie więc idziemy wciąż radosną nucąc pieśń:",
+                  "Ref. Ty jesteś Bogiem wiernym na wieczny czas. / x2",
+                  "2. Przez dar Twojego Chleba, dobry Boże nasz.",
+                  "Rodzinę bratnią czynisz z nas, miłować uczysz nas.",
+                  "3. To Twoje miłowanie dało wolność nam.",
+                  "Chwalimy święte Imię Boga, jak uczyłeś nas.",
+                  "4. Tyś nam wyznaczył drogę, wiodącą na Twój szlak.",
+                  "Idziemy więc, by radość nieść tam, gdzie jej światu brak."
+            ]
+      },
+      {
+            "title": "TY ŚWIATŁOŚĆ DNIA",
+            "author": "ŚPIEWNIK (8).pdf",
+            "lyrics": [
+                  "1.Ty światłość dnia wszedłeś w moje ciemności,",
+                  "dałeś mi wzrok abym mógł.",
+                  "Widzieć twą twarz i spojrzenie miłości ,",
+                  "w którym roztapiasz mój strach.",
+                  "Ref: Jestem tu by wielbić ,by oddawać chwałę ,jestem",
+                  "tu by wyznać to mój Bóg",
+                  "dobry i łaskawy cały tak wspaniały ponad wszystko cenny dla",
+                  "mnie jest. / x2",
+                  "2.Ty czasów król wywyższony na wieki,",
+                  "jaśnieje w niebie twój tron .",
+                  "Zszedłeś na ziemię by stać się człowiekiem,",
+                  "by rajem stał się mój dom .",
+                  "I niczym nie odpłacę się,",
+                  "za miłość twą i za twój krzyż. / x4"
+            ]
+      },
+      {
+            "title": "JESTEŚ KRÓLEM",
+            "author": "ŚPIEWNIK (8).pdf",
+            "lyrics": [
+                  "Jesteś królem,",
+                  "jesteś królem,",
+                  "Królem jest Bóg / x2",
+                  "Podnieśmy wszyscy nasze serca,",
+                  "podniesmy wszyscy nasze dłonie,",
+                  "Stawajmy przed obliczem Pana,",
+                  "wielbiąc Go / x2"
+            ]
+      },
+      {
+            "title": "DUCHU ŚWIĘTY OBIECANY NAM",
+            "author": "ŚPIEWNIK (8).pdf",
+            "lyrics": [
+                  "1. Duchu Święty, obiecany nam",
+                  "Przypominaj to, co mówi Pan.",
+                  "Ref: Z Tobą Słowo Boże żywe staje się.",
+                  "W moim życiu, Duchu, prowadź mnie.",
+                  "2. Duchu Prawdy, Ty umacniaj mnie",
+                  "W drodze życia, gdzie wybrałeś mnie.",
+                  "3. Daj mi spotkać dzisiaj twarzą w twarz",
+                  "Żyjącego Pana pośród nas."
+            ]
+      },
+      {
+            "title": "BĘDZIE TO PIĘKNE SPOTKANIE",
+            "author": "ŚPIEWNIK (8).pdf",
+            "lyrics": [
+                  "Nie mamy już miejsca stałego",
+                  "Wśród wszystkich zakątków tej ziemi.",
+                  "Szukamy wciąż miejsca stałego,",
+                  "Wciąż do nowego dążymy.",
+                  "Ale przyjdzie taki dzień,",
+                  "Gdy zapuka do ciebie Ktoś,",
+                  "Wówczas powie ci: Odnalazłeś swój dom,",
+                  "Dom spotkania Miłości.",
+                  "Ref. Będzie to piękne spotkanie,",
+                  "Spotkanie, którego nie zna nikt.",
+                  "Będzie to przebywanie",
+                  "Na zawsze i po wieczne dni.",
+                  "Jasność stanie przed tobą",
+                  "I ciemność na zawsze przeminie.",
+                  "Pan wyjdzie na to spotkanie",
+                  "W jedynej dla ciebie godzinie."
+            ]
+      },
+      {
+            "title": "PRZYBĄDŹ ŚWIĘTY",
+            "author": "ŚPIEWNIK (8).pdf",
+            "lyrics": [
+                  "1. Języku ognia przyjdź i płoń w naszych sercach",
+                  "Duchu Miłości przemieniaj nas",
+                  "Swe pocieszenie nam daj i nim wypełniaj",
+                  "Duchu Nadziei umacniaj nas",
+                  "Ref: Przybądź Święty Niepojęty,",
+                  "z Nieba na nas tchnięty Duchu",
+                  "Rozpal Świętą, Niepojętą,",
+                  "z Nieba na nas tchniętą miłość",
+                  "Nią ogarnij nas, Amen",
+                  "Nią ogarnij nas, Amen",
+                  "2. Obłoku jasny ochroń nas przed gniewem złego",
+                  "Daj soli smak i światłu blask",
+                  "Nie daj się ukryć miastu Boga przedwiecznego",
+                  "Osłaniaj je, strzeż jego bram.",
+                  "3. Pocieszycielu radość Swą ześlij z Nieba",
+                  "Wszak Dobry ją obiecał nam",
+                  "Przerwij milczenie w Imię Syna słowa chleba",
+                  "Najświętsze tchnienie wołaj w nas",
+                  "Witaj Święty Niepojęty,",
+                  "z Nieba na nas tchnięty Duchu",
+                  "Rozpal Świętą, Niepojętą,",
+                  "z Nieba na nas tchniętą miłość",
+                  "Nią ogarnij nas, Amen",
+                  "Nią ogarnij nas, Amen"
+            ]
+      },
+      {
+            "title": "POWIETRZEM MOIM JEST",
+            "author": "ŚPIEWNIK (8).pdf",
+            "lyrics": [
+                  "Powietrzem moim jest x2",
+                  "Obecność Twoja w sercu mym.",
+                  "Powszednim chlebem mym x2",
+                  "Twe żywe słowo dałeś mi dziś.",
+                  "Bez Ciebie nie mogę już żyć",
+                  "Dla Ciebie me serce chce bić"
+            ]
+      },
+      {
+            "title": "CHLEBIE NAJCICHSZY",
+            "author": "ŚPIEWNIK (8).pdf",
+            "lyrics": [
+                  "Ref: Chlebie najcichszy,",
+                  "otul mnie swym milczeniem,",
+                  "ukryj mnie w swojej bieli,",
+                  "wchłoń moją ciemność.",
+                  "1. Przemień mnie w siebie,",
+                  "bym jak Ty stał się chlebem. / x2",
+                  "Pobłogosław mnie, połam,",
+                  "rozdaj łaknącym braciom. / x2",
+                  "2. A ułomki chleba,",
+                  "które zostaną / x2",
+                  "rozdaj tym,",
+                  "którzy nie wierzą w swój głód. / x2"
+            ]
+      },
+      {
+            "title": "JAK DOBRZE JEST DZIĘKOWAĆ",
+            "author": "ŚPIEWNIK (8).pdf",
+            "lyrics": [
+                  "Jak dobrze jest dziękować  Ci Panie",
+                  "I śpiewać Psalm Twojemu imieniu",
+                  "I opowiadać rano twoje  miłosierdzie",
+                  "A w nocy wierność Twoją,przy dziesięciostrunnej",
+                  "harfie i lutni i dźwięcznej cytrze"
+            ]
+      },
+      {
+            "title": "PAN JEST PASTERZEM MOIM",
+            "author": "ŚPIEWNIK (8).pdf",
+            "lyrics": [
+                  "Pan jest pasterzem moim,",
+                  "Niczego mi nie braknie",
+                  "Na niwach zielonych pasie mnie,",
+                  "Nad wody spokojne prowadzi mnie",
+                  "Na niwach zielonych pasie mnie,",
+                  "Nad wody spokojne prowadzi mnie"
+            ]
+      },
+      {
+            "title": "CHCĘ WYWYŻSZAĆ IMIĘ TWE",
+            "author": "ŚPIEWNIK (8).pdf",
+            "lyrics": [
+                  "Chcę wywyższać Imię Twe",
+                  "Chcę zaśpiewać Tobie chwałę",
+                  "Panie dziś raduję się",
+                  "Bo przyszedłeś, by mnie zbawić",
+                  "Z nieba zstąpiłeś i chcesz prowadzić mnie",
+                  "Na krzyżu zmarłeś, by mój zapłacić dług",
+                  "Z grobu wstałeś i dziś",
+                  "nieba Królem jesteś Ty",
+                  "Chcę wywyższać Imię Twe"
+            ]
+      },
+      {
+            "title": "RADUJE SIĘ DUSZA MA",
+            "author": "ŚPIEWNIK (8).pdf",
+            "lyrics": [
+                  "Raduje się dusza ma wielbi Pana swego",
+                  "Będę Ci śpiewał z całej siły",
+                  "Sławić Cię będę za Twe dzieła",
+                  "Będę Ci śpiewał z całej siły",
+                  "Błogosławić będę Twoje imię",
+                  "Jest miłosierny Pan zastępów",
+                  "Moc Jego ramienia nad swym ludem",
+                  "Pan mój zbawca."
+            ]
+      },
+      {
+            "title": "WEJDŹMY DO JEGO BRAM",
+            "author": "ŚPIEWNIK (8).pdf",
+            "lyrics": [
+                  "Wejdźmy do Jego bram z dziękczynieniem,",
+                  "U jego tronu oddajmy cześć.",
+                  "Wejdźmy do Jego bram z uwielbieniem,",
+                  "Radosną Bogu śpiewajmy pieśń!",
+                  "Rozraduj się w Nim, twym Stworzycielu,",
+                  "Raduj się w Nim, Światłości twej!",
+                  "Rozraduj się w Nim, twym Zbawicielu,",
+                  "Rozraduj się w Nim i wywyższać Go chciej.",
+                  "Alleluja x4"
+            ]
+      },
+      {
+            "title": "BOGU WYŚPIEWAM",
+            "author": "ŚPIEWNIK (8).pdf",
+            "lyrics": [
+                  "1. Bogu wyśpiewam, Bogu na niebie,",
+                  "Bogu wyśpiewam wdzięczności psalm",
+                  "Jahwe mi zagra na strunach światła",
+                  "i głos popłynie po nieba dach.",
+                  "Ref: Myślisz, że cisza moim domem jest,",
+                  "Mówisz, że nie znam muzyki",
+                  "Zobacz dla Pana dzisiaj śpiewam psalm",
+                  "Mój głos płynie do gwiazd,",
+                  "Płynie do gwiazd.",
+                  "2. Bogu wyśpiewam, Bogu na niebie,",
+                  "Bogu wyśpiewam wdzięczności psalm",
+                  "W dłoniach zaniosę, radość, cierpienie,",
+                  "W gestach zaklęte słowa upojne patrz.",
+                  "Ref: Słuchaj jak ręce moje wielbią dziś",
+                  "Jahwe, Boga muzyki",
+                  "Cisza przemienia się w modlitwy cud",
+                  "Mój głos płynie do gwiazd,",
+                  "płynie do gwiazd."
+            ]
+      },
+      {
+            "title": "JESTEŚMY PIĘKNI",
+            "author": "ŚPIEWNIK (8).pdf",
+            "lyrics": [
+                  "Jesteśmy piękni Twoim pięknem Panie!",
+                  "Jesteśmy piękni Twoim pięknem Panie!",
+                  "Ty otwierasz nasze oczy, na piękno Twoje Panie!",
+                  "Ty otwierasz nasze oczy, Panie!",
+                  "Ty otwierasz nasze oczy na piękno Twoje Panie!",
+                  "Ty otwierasz nasze oczy Panie, na Twoje piękno!"
+            ]
+      },
+      {
+            "title": "PRZYJACIELA MAM",
+            "author": "ŚPIEWNIK (8).pdf",
+            "lyrics": [
+                  "Przyjaciela mam,",
+                  "Co pociesza mnie.",
+                  "Gdy o Jego ramię,",
+                  "Oprę się.",
+                  "W nim nadzieję mam,",
+                  "Uleciał strach.",
+                  "On najbliżej jest,",
+                  "Zawsze troszczy się.",
+                  "Królów Król, Z nami Bóg /x2",
+                  "Jezus /x4"
+            ]
+      },
+      {
+            "title": "DO CIEBIE PANIE",
+            "author": "ŚPIEWNIK (8).pdf",
+            "lyrics": [
+                  "Do Ciebie Panie",
+                  "Woła dusza moja",
+                  "tęskni ciało me",
+                  "Gdy nie ma Cię",
+                  "Moje serce ogarnia lęk",
+                  "Przyjdź dotknij mnie",
+                  "rozraduj mnie",
+                  "Jezu, pragnę blisko Ciebie być",
+                  "Jezu, w Twych ramionach się skryć",
+                  "Słodycz Twą poznawać co dnia",
+                  "Przy sercu Twym trwać."
+            ]
+      },
+      {
+            "title": "OTWÓRZ ME OCZY O PANIE",
+            "author": "ŚPIEWNIK (8).pdf",
+            "lyrics": [
+                  "Otwórz me oczy, o Panie,",
+                  "otwórz mej duszy oczy.",
+                  "Pragnę Cię widzieć",
+                  "Pragnę Cię widzieć",
+                  "Widzieć Cię w blasku chwały Twej",
+                  "Jak widzą aniołów zastępy",
+                  "Zsyłasz nam miłość i moc",
+                  "Gdy Ci śpiewamy: Święty, Święty",
+                  "Święty, święty, święty! x2",
+                  "Pragnę Cię widzieć. x2"
+            ]
+      },
+      {
+            "title": "PRZYJACIELU",
+            "author": "ŚPIEWNIK (8).pdf",
+            "lyrics": [
+                  "1. Przyjacielu, chcę zostać z Tobą",
+                  "Przy Tobie chcę być",
+                  "I nie trzeba, byś mówił coś",
+                  "Wystarczy byś był.",
+                  "Ref: Bo nie ma większej miłości niż ta",
+                  "Gdy ktoś życie oddaje bym ja mógł żyć.",
+                  "2. Chcę być z Tobą, gdy jest mi dobrze",
+                  "I kiedy mi źle,",
+                  "Przyjacielu, Otwieram przed",
+                  "Tobą serce swe."
+            ]
+      },
+      {
+            "title": "JAK CENNA JEST DLA MNIE TWOJA ŁASKA PANIE",
+            "author": "ŚPIEWNIK (8).pdf",
+            "lyrics": [
+                  "Ref. Jak cenna jest dla mnie Twoja łaska Panie.",
+                  "Do Ciebie przychodzą synowie ludzcy.",
+                  "Nasycisz ich tłuszczem, napoisz potokiem,",
+                  "I schronią się w cieniu skrzydeł Twoich.",
+                  "1. Łaskawość Twoja Panie sięga nieba",
+                  "A Twoja wierność samych obłoków",
+                  "Twa sprawiedliwość jak najwyższe góry",
+                  "Wyroki Twoje jak wielka otchłań.",
+                  "2. Albowiem w Tobie jest źródło życia",
+                  "I w Twej światłości oglądamy światłość",
+                  "Zachowaj łaskę dla tych co Cię znają",
+                  "A sprawiedliwość Twą dla prawych sercem."
+            ]
+      },
+      {
+            "title": "NIECH OBLICZE TWE",
+            "author": "ŚPIEWNIK (8).pdf",
+            "lyrics": [
+                  "Niech oblicze Twe Panie Mój",
+                  "zajaśnieje nad sługą Twym",
+                  "niech przenika mnie Jego blask."
+            ]
+      },
+      {
+            "title": "OCZYSZCZENIE",
+            "author": "ŚPIEWNIK (8).pdf",
+            "lyrics": [
+                  "1. Patrzysz na mnie takim wzrokiem,",
+                  "że z tego wszystkiego, aż płakać mi się chce.",
+                  "Patrzysz na mnie takim wzrokiem,",
+                  "że bezczelnie proszę o jeszcze.",
+                  "Ref: W Twoim spojrzeniu słońce",
+                  "W Twoim tchnieniu wiatru",
+                  "W Twojej tęsknocie deszczu",
+                  "Czuje miłość Twoją Panie",
+                  "W moim smutku i radości",
+                  "W moim zwątpieniu i pewności",
+                  "Czuje, czuje miłość Twoją, Jahwe",
+                  "2. Patrzysz na mnie, z taką wiarą,",
+                  "z jaką nigdy nikt, nie odważył spojrzeć się.",
+                  "Patrzysz na mnie, choć nie mogę,",
+                  "odwzajemnić spojrzenia Twego,",
+                  "bo boję się, chociaż wiem że...",
+                  "3. Panie, co oznacza to, czym mnie doświadczasz,",
+                  "Twoje spojrzenie jest dla mnie oczyszczeniem.",
+                  "Zapraszam cię Jezu, do swojego życia,",
+                  "weź mnie Panie za rękę",
+                  "i porwij w otchłań TWOJEJ MIŁOŚCI!!!"
+            ]
+      },
+      {
+            "title": "WSZYSCY LUDZIE",
+            "author": "ŚPIEWNIK (8).pdf",
+            "lyrics": [
+                  "Wszyscy ludzie klaszczą w dłonie",
+                  "cała ziemia śpiewa, śpiewa",
+                  "Wielka radość na Syjonie",
+                  "Król zstępuje z nieba, z nieba",
+                  "Nadejdzie dzień, nadejdzie dzień",
+                  "Zobaczy to (zobaczy to) każdy z nas",
+                  "Nadejdzie dzień, nadejdzie dzień",
+                  "Uwielbi Go (uwielbi Go) cały świat",
+                  "Wszyscy ludzie klaszczą w dłonie",
+                  "cała ziemia śpiewa, śpiewa",
+                  "Wielka radość na Syjonie",
+                  "Król zstępuje z nieba, z nieba",
+                  "Nasz Pan potężny i groźny",
+                  "Królem całej ziemi jest",
+                  "A nam oddaje narody",
+                  "słychać już zwycięstwa pieśń"
+            ]
+      },
+      {
+            "title": "W TOBIE TONIE DUSZA MOJA",
+            "author": "ŚPIEWNIK (8).pdf",
+            "lyrics": [
+                  "W Tobie tonie dusza moja",
+                  "W Tobie rozpływa się serce moje /x2",
+                  "Nie umiem kochać połowicznie,",
+                  "ale całą mocą mej duszy i całym żarem mega serca",
+                  "Sam o Panie rozpaliłeś moją miłość ku Tobie",
+                  "W Tobie zatonęła dusza moja na wieki"
+            ]
+      },
+      {
+            "title": "ODPOCZNIENIE",
+            "author": "ŚPIEWNIK (8).pdf",
+            "lyrics": [
+                  "1. Odpocznienie w cieniu skrzydeł Twych",
+                  "Pokój poznam poprzez miłość Twą.",
+                  "Choć upadnę, nie będę martwił się,",
+                  "Gdy schronienie znajdę w cieniu skrzydeł Twych.",
+                  "Ref: Znajdę w cieniu (3x) skrzydeł Twych.",
+                  "2. W Twoim cieniu me schronienie jest",
+                  "Twa osłona nie zawiedzie mnie.",
+                  "Wobec strzał ja nie muszę trwożyć się,",
+                  "Gdy schronienie znajdę w cieniu skrzydeł Twych"
+            ]
+      },
+      {
+            "title": "WSZYSTKO MOGĘ W TYM, KTÓRY MNIE UMACNIA",
+            "author": "ŚPIEWNIK (8).pdf",
+            "lyrics": [
+                  "Wszystko mogę w tym,",
+                  "który mnie umacnia x4",
+                  "Jezus on mnie umacnia x4",
+                  "Rozlewaj swoją Chwałę,",
+                  "Potęgę i Moc",
+                  "Na miasto Twoje Święte,",
+                  "Potęgę i Moc"
+            ]
+      },
+      {
+            "title": "KAŻDEGO DNIA DZIĘKUJĘ BOŻE ZA TO, ŻE CIĘ MAM",
+            "author": "ŚPIEWNIK (8).pdf",
+            "lyrics": [
+                  "Ref: Każdego dnia dziękuję Boże za to, że Cię mam",
+                  "Za to, że jesteś przy mnie bym nigdy nie czuł się sam",
+                  "Każdego dnia nadajesz memu życiu nowy sens",
+                  "Z Tobą mogę iść po jego kres /x2",
+                  "1. Bo bez Ciebie życie traci sens jakikolwiek",
+                  "Bez Ciebie nie mogę nawet w nocy zmrużyć powiek",
+                  "Każdy dzień i każdą noc chcę być tylko przy Tobie",
+                  "Bo jesteś mą Miłością, jesteś moim Bogiem",
+                  "Wiem kochasz mnie i prowadzisz Ojciec Syna",
+                  "Z Tobą chcę być już do końca, aż po sam grób",
+                  "Jezu ufam Ci, wiem, że życie się zaczyna",
+                  "i zrobię dla Ciebie ile tylko będę mógł",
+                  "Ref: Każdego dnia dziękuję Boże za to, że Cię mam...",
+                  "2. Bo chcę być częścią Ciebie, jak Ty jesteś częścią mnie",
+                  "Chcę Tobie poświęcić me życie, tylko z Tobą dzielić się",
+                  "Ja jestem tylko Twój i tylko do Ciebie należę,",
+                  "już na zawsze będę kochał Cię.",
+                  "Twoje Ciało",
+                  "i",
+                  "Krew dana nam poi i karmi nas",
+                  "Jednego dnia bez Ciebie nie chcę dłużej żyć",
+                  "W Twoich ramionach Panie miłość wciąż ocienia serce me",
+                  "Niech Twoja wola na wiek wieków staje się",
+                  "Każdego dnia dziękuję Boże za to, że Cię mam...",
+                  "3. I kocham Twój delikatny powiew porankami",
+                  "Kocham, gdy moimi w Tobie zmagam się grzechami",
+                  "Kocham gdy obdarowujesz mnie Twymi łaskami",
+                  "Nie do opisania jest uczucie między nami",
+                  "Bo Twoja miłość do mnie nie zna granic",
+                  "Nigdy Cię nie oddam na Świecie nikomu za nic",
+                  "(joł!)",
+                  "Ja słucham Twoich rad, dla Ciebie staram pozbyć się wad",
+                  "To wokół Ciebie kręci się cały mój Świat",
+                  "Ref: Każdego dnia dziękuję Boże za to, że Cię mam…"
+            ]
+      },
+      {
+            "title": "DUCH ŻYJE W NAS",
+            "author": "ŚPIEWNIK (8).pdf",
+            "lyrics": [
+                  "Noc, z dala wzywa Cię Duch Życia,",
+                  "Święty Duch.",
+                  "Nic, nie przeszkodzi Ci już,",
+                  "nie trać wiary w Jego moc, ooo,",
+                  "w Jego moc.",
+                  "Duch żyje w nas.",
+                  "Duch nami lśni.",
+                  "Pilnuje z nieba",
+                  "biegu nocy, dni.",
+                  "Na straży prawdy,",
+                  "na straży praw.",
+                  "W twoim spojrzeniu.",
+                  "Duch żyje w nas."
+            ]
+      },
+      {
+            "title": "CHCEMY SŁUCHAĆ CIĘ",
+            "author": "ŚPIEWNIK (8).pdf",
+            "lyrics": [
+                  "1. Twoje słowo jak lampa dla stóp, co oświetla nam życie,",
+                  "Pozwól",
+                  "poznać",
+                  "smak",
+                  "Twoich",
+                  "słów",
+                  "i",
+                  "wylewaj",
+                  "obficie",
+                  "swego",
+                  "Ducha",
+                  "Ref:",
+                  "Chcemy",
+                  "słuchać",
+                  "Cię,",
+                  "w",
+                  "miłości",
+                  "Twej",
+                  "stawać",
+                  "się",
+                  "podobnymi do Ciebie, Niech słowo Twe wzejdzie,",
+                  "weź serca i przemieniaj je!",
+                  "Daj nam poznać Cię, tak wsłuchać się w prawo Twe,",
+                  "Byśmy",
+                  "byli",
+                  "gotowi,",
+                  "niech",
+                  "słowo",
+                  "Twe",
+                  "zrodzi",
+                  "prawdziwe",
+                  "owoce",
+                  "wśród serc.",
+                  "2. Twoje słowo dla duszy jak miód, co dzień karmisz do syta,",
+                  "Tak",
+                  "pouczaj",
+                  "i",
+                  "kieruj",
+                  "swój",
+                  "lud,",
+                  "byśmy",
+                  "doszli",
+                  "do",
+                  "prawdy",
+                  "Twego",
+                  "Syna.",
+                  "3. Twoje słowo to wcielony Pan, cała nasza nadzieja.",
+                  "Tajemnice",
+                  "Twe",
+                  "poznać",
+                  "nam",
+                  "daj,",
+                  "że",
+                  "to",
+                  "słowo",
+                  "od",
+                  "zawsze",
+                  "było",
+                  "Bogiem.",
+                  "4. Twoje słowo – obosieczny miecz, co ma moc nas uwolnić.",
+                  "Złego",
+                  "ducha",
+                  "oddalaj",
+                  "precz,",
+                  "naucz",
+                  "nas",
+                  "stale",
+                  "czerpać",
+                  "z",
+                  "tego",
+                  "źródła.",
+                  "5.",
+                  "Twoje",
+                  "słowo",
+                  "to",
+                  "prawda",
+                  "i",
+                  "Duch,",
+                  "w",
+                  "Twojej",
+                  "łasce",
+                  "nas",
+                  "wiedziesz.",
+                  "Miej",
+                  "w",
+                  "opiece,",
+                  "Panie",
+                  "nasz",
+                  "Ruch,",
+                  "w",
+                  "uwielbieniu",
+                  "wznosimy",
+                  "głos",
+                  "do Ciebie."
+            ]
+      },
+      {
+            "title": "MATKO, KTÓRA NAS ZNASZ (DROGA KRZYŻOWA)",
+            "author": "ŚPIEWNIK (8).pdf",
+            "lyrics": [
+                  "Ref.",
+                  "Matko, która nas znasz,",
+                  "z dziećmi Twymi bądź,",
+                  "Na drogach nam nadzieją świeć,",
+                  "z Synem Twym, z nami idź.",
+                  "1.",
+                  "Matko Osądzonego -",
+                  "przyjdź i drogę wskaż,",
+                  "Matko Biczowanego -",
+                  "do Syna Swego nas prowadź,",
+                  "Bogu towarzysząca -",
+                  "pokój światu daj",
+                  ".",
+                  "2.",
+                  "Matko krzyż podnosząca…",
+                  "Dla zbawienia naszego…",
+                  "Pośredniczko najlepsza…",
+                  "3.",
+                  "Matko upadających…",
+                  "Matko prześladowanych…",
+                  "Wszystkich grzesznych ucieczko…",
+                  "4.",
+                  "Matko wszystkich cierpiących…",
+                  "Która nas zawsze pocieszasz…",
+                  "Nadziejo nasza w Panu…",
+                  "5.",
+                  "Matko krzyż nam dająca…",
+                  "Która słabym pomagasz…",
+                  "Ty nas zawsze zrozumiesz…",
+                  "6.",
+                  "Matko wszystkich wierzących…",
+                  "Daj odwagę i siłę…",
+                  "Naucz nas miłosierdzia…",
+                  "7.",
+                  "Matko ludzi upadłych…",
+                  "Ucz nas zawsze powstawać…",
+                  "Drogo nasza do Pana…",
+                  "8.",
+                  "Matko wszystkich płaczących…",
+                  "Drogowskazie najlepszy…",
+                  "Ratuj naszą Ojczyznę…",
+                  "9.",
+                  "Dziewico z nami idąca…",
+                  "Ratuj nas w naszych upadkach…",
+                  "Nigdy nas nie opuszczaj…",
+                  "10.",
+                  "Matko, promieniu czystości…",
+                  "Matko prosząca za nami…",
+                  "Matko przebaczająca…",
+                  "11.",
+                  "Matko o sercu zranionym…",
+                  "Mieczem boleści przeszyta…",
+                  "Odkupicielko nasza…",
+                  "12.",
+                  "Matko pod krzyżem stojąca…",
+                  "Matko przez Syna nam dana…",
+                  "Za dzieci nas przyjmująca…",
+                  "13.",
+                  "Matko przed Synem schylona…",
+                  "Matko pełna miłości…",
+                  "Panno wierna do końca…",
+                  "14.",
+                  "Matko nad grobem Syna…",
+                  "Zmartwychwstania nadziejo…",
+                  "Módl się zawsze za nami…",
+                  "15.",
+                  "Matko Zmartwychwstałego…",
+                  "Królowo wiecznej radości…",
+                  "Maryjo, Matko ludzi..."
+            ]
+      }
+];
+
+    const state = {
+      songIndex: 0,
+      fontSize: 64,
+      slideIndex: 0,
+      slides: [],
+      displayWindow: null
+    };
+
+    const els = {
+      songSelect: document.getElementById("songSelect"),
+      fontSize: document.getElementById("fontSize"),
+      fontSizeNumber: document.getElementById("fontSizeNumber"),
+      openDisplay: document.getElementById("openDisplay"),
+      prevSlide: document.getElementById("prevSlide"),
+      nextSlide: document.getElementById("nextSlide"),
+      displayStatus: document.getElementById("displayStatus"),
+      slideStatus: document.getElementById("slideStatus"),
+      songTitle: document.getElementById("songTitle"),
+      songMeta: document.getElementById("songMeta"),
+      splitStatus: document.getElementById("splitStatus"),
+      previewText: document.getElementById("previewText")
+    };
+
+    function projectionHtml() {
+      return `<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Audience Display</title>
+  <style>
+    html, body { width: 100%; height: 100%; margin: 0; background: #000; overflow: hidden; }
+    body { color: #fff; font-family: Arial, Helvetica, sans-serif; }
+    #slide {
+      width: 100vw;
+      height: 100vh;
+      display: grid;
+      place-items: center;
+      padding: 7vh 7vw;
+      text-align: center;
+      white-space: pre-wrap;
+      overflow-wrap: anywhere;
+      font-weight: 700;
+      line-height: 1.18;
+    }
+    #measure {
+      position: fixed;
+      left: -200vw;
+      top: 0;
+      width: 86vw;
+      padding: 0;
+      white-space: pre-wrap;
+      overflow-wrap: anywhere;
+      font-weight: 700;
+      line-height: 1.18;
+      visibility: hidden;
+    }
+  </style>
+</head>
+<body>
+  <div id="slide"></div>
+  <div id="measure"></div>
+</body>
+</html>`;
+    }
+
+    function getDisplayDocument() {
+      if (!state.displayWindow || state.displayWindow.closed) return null;
+      return state.displayWindow.document;
+    }
+
+    function openDisplay() {
+      if (!state.displayWindow || state.displayWindow.closed) {
+        state.displayWindow = window.open("", "worshipSlidesDisplay", "popup=yes,width=1280,height=720");
+        if (!state.displayWindow) {
+          els.displayStatus.textContent = "Popup blocked";
+          return;
+        }
+        state.displayWindow.document.open();
+        state.displayWindow.document.write(projectionHtml());
+        state.displayWindow.document.close();
+        state.displayWindow.addEventListener("resize", debounce(rebuildSlides, 120));
+      }
+      state.displayWindow.focus();
+      rebuildSlides();
+    }
+
+    function debounce(fn, wait) {
+      let id;
+      return () => {
+        clearTimeout(id);
+        id = setTimeout(fn, wait);
+      };
+    }
+
+    function measureLines(lines, fontSize) {
+      const displayDoc = getDisplayDocument();
+      const fallbackLines = Math.max(1, Math.floor(520 / (fontSize * 1.18)));
+      if (!displayDoc) {
+        return { maxHeight: fallbackLines * fontSize * 1.18, measure: null };
+      }
+
+      const measure = displayDoc.getElementById("measure");
+      measure.style.fontSize = `${fontSize}px`;
+      const maxHeight = displayDoc.defaultView.innerHeight * 0.86;
+      return { maxHeight, measure };
+    }
+
+    function splitLyrics(song, fontSize) {
+      const lines = song.lyrics.filter(line => line.trim());
+      const { maxHeight, measure } = measureLines(lines, fontSize);
+      const slides = [];
+      let current = [];
+
+      for (const line of lines) {
+        const candidate = current.concat(line);
+        if (fits(candidate, measure, maxHeight, fontSize) || current.length === 0) {
+          current = candidate;
+        } else {
+          slides.push(current.join("\n"));
+          current = [line];
+        }
+      }
+
+      if (current.length) slides.push(current.join("\n"));
+      return slides.length ? slides : [""];
+    }
+
+    function fits(lines, measure, maxHeight, fontSize) {
+      if (!measure) return lines.length * fontSize * 1.18 <= maxHeight;
+      measure.textContent = lines.join("\n");
+      return measure.scrollHeight <= maxHeight;
+    }
+
+    function rebuildSlides() {
+      const song = songs[state.songIndex];
+      state.slides = splitLyrics(song, state.fontSize);
+      state.slideIndex = Math.min(state.slideIndex, state.slides.length - 1);
+      render();
+    }
+
+    function render() {
+      const song = songs[state.songIndex];
+      const slide = state.slides[state.slideIndex] || "";
+      els.songTitle.textContent = song.title;
+      els.songMeta.textContent = song.author;
+      els.previewText.textContent = slide || "No lyrics on this slide.";
+      els.previewText.classList.toggle("empty", !slide);
+      els.previewText.style.fontSize = `${Math.max(22, Math.round(state.fontSize * 0.55))}px`;
+      els.slideStatus.textContent = `${state.slideIndex + 1} / ${state.slides.length}`;
+      els.splitStatus.textContent = `${state.slides.length} slide${state.slides.length === 1 ? "" : "s"} at ${state.fontSize}px`;
+      els.prevSlide.disabled = state.slideIndex === 0;
+      els.nextSlide.disabled = state.slideIndex >= state.slides.length - 1;
+      renderDisplay(slide);
+    }
+
+    function renderDisplay(slide) {
+      const displayDoc = getDisplayDocument();
+      els.displayStatus.textContent = displayDoc ? "Display open" : "Display closed";
+      if (!displayDoc) return;
+      const slideEl = displayDoc.getElementById("slide");
+      slideEl.textContent = slide;
+      slideEl.style.fontSize = `${state.fontSize}px`;
+    }
+
+    function setFontSize(value) {
+      const size = Math.max(32, Math.min(112, Number(value) || 64));
+      state.fontSize = size;
+      els.fontSize.value = size;
+      els.fontSizeNumber.value = size;
+      rebuildSlides();
+    }
+
+    function go(delta) {
+      state.slideIndex = Math.max(0, Math.min(state.slides.length - 1, state.slideIndex + delta));
+      render();
+    }
+
+    function init() {
+      songs.forEach((song, index) => {
+        const option = document.createElement("option");
+        option.value = index;
+        option.textContent = song.title;
+        els.songSelect.append(option);
+      });
+
+      els.songSelect.addEventListener("change", () => {
+        state.songIndex = Number(els.songSelect.value);
+        state.slideIndex = 0;
+        rebuildSlides();
+      });
+      els.fontSize.addEventListener("input", event => setFontSize(event.target.value));
+      els.fontSizeNumber.addEventListener("change", event => setFontSize(event.target.value));
+      els.openDisplay.addEventListener("click", openDisplay);
+      els.prevSlide.addEventListener("click", () => go(-1));
+      els.nextSlide.addEventListener("click", () => go(1));
+
+      window.addEventListener("keydown", event => {
+        if (event.key === "ArrowRight" || event.key === "PageDown" || event.key === " ") go(1);
+        if (event.key === "ArrowLeft" || event.key === "PageUp") go(-1);
+      });
+
+      rebuildSlides();
+      setInterval(() => renderDisplay(state.slides[state.slideIndex] || ""), 1000);
+    }
+
+    init();
+  </script>
+</body>
+</html>
