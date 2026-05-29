@@ -182,21 +182,41 @@
 
     .preview-wrap {
       display: grid;
+      place-items: center;
       min-height: 0;
       padding: 20px;
       background: #eef2f4;
     }
 
     .preview {
-      display: grid;
-      place-items: center;
-      min-height: 0;
-      border-radius: 8px;
+      aspect-ratio: 16 / 9;
       background: #050505;
+      border-radius: 8px;
       color: white;
       overflow: hidden;
-      padding: 32px;
+      position: relative;
+      width: min(100%, calc((100vh - 180px) * 16 / 9));
+    }
+
+    .preview-slide {
+      align-items: center;
+      background: #050505;
+      color: white;
+      display: grid;
+      font-weight: 700;
+      height: 720px;
+      justify-items: center;
+      left: 50%;
+      line-height: var(--slide-line-height, 1.12);
+      overflow-wrap: anywhere;
+      padding: var(--slide-padding-y, 5%) var(--slide-padding-x, 5%);
+      position: absolute;
       text-align: center;
+      top: 50%;
+      transform: translate(-50%, -50%) scale(var(--preview-scale, 1));
+      transform-origin: center;
+      white-space: pre-wrap;
+      width: 1280px;
     }
 
     .measure-text {
@@ -212,10 +232,6 @@
 
     .preview-text {
       width: 100%;
-      white-space: pre-wrap;
-      overflow-wrap: anywhere;
-      font-weight: 700;
-      line-height: 1.18;
     }
 
     .hint { color: var(--muted); font-size: 0.9rem; line-height: 1.45; margin: 0; }
@@ -372,7 +388,9 @@
       </header>
       <div class="preview-wrap">
         <div class="preview">
-          <div id="previewText" class="preview-text empty">Select a song to start.</div>
+          <div id="previewSlide" class="preview-slide">
+            <div id="previewText" class="preview-text empty">Select a song to start.</div>
+          </div>
           <div id="previewMeasure" class="measure-text"></div>
         </div>
       </div>
@@ -4321,6 +4339,7 @@
       songTitle: document.getElementById("songTitle"),
       songMeta: document.getElementById("songMeta"),
       splitStatus: document.getElementById("splitStatus"),
+      previewSlide: document.getElementById("previewSlide"),
       previewText: document.getElementById("previewText"),
       previewMeasure: document.getElementById("previewMeasure")
     };
@@ -4715,11 +4734,13 @@
       const song = songs[state.songIndex];
       const slide = state.slides[state.slideIndex] || "";
       const displayFontSize = getDisplayFontSize(slide);
+      syncPreviewLayout();
       els.songTitle.textContent = song.title;
       els.songMeta.textContent = song.author;
       els.previewText.textContent = slide || "No lyrics on this slide.";
       els.previewText.classList.toggle("empty", !slide);
-      els.previewText.style.fontSize = `${Math.max(22, Math.round(displayFontSize * 0.55))}px`;
+      els.previewSlide.style.fontSize = `${displayFontSize}px`;
+      updatePreviewScale();
       syncFontControls(displayFontSize);
       els.slideStatus.textContent = `${state.slideIndex + 1} / ${state.slides.length}`;
       els.splitStatus.textContent = state.autoFit
@@ -4737,6 +4758,22 @@
       const slideEl = displayDoc.getElementById("slide");
       slideEl.textContent = slide;
       slideEl.style.fontSize = `${fontSize}px`;
+    }
+
+    function updatePreviewScale() {
+      const previewBox = els.previewSlide.parentElement.getBoundingClientRect();
+      if (!previewBox.width || !previewBox.height) return;
+      const scale = Math.min(
+        previewBox.width / fontSizing.fallbackWidth,
+        previewBox.height / fontSizing.fallbackHeight
+      );
+      els.previewSlide.style.setProperty("--preview-scale", scale);
+    }
+
+    function syncPreviewLayout() {
+      els.previewSlide.style.setProperty("--slide-padding-x", `${fontSizing.horizontalPaddingVw}%`);
+      els.previewSlide.style.setProperty("--slide-padding-y", `${fontSizing.verticalPaddingVh}%`);
+      els.previewSlide.style.setProperty("--slide-line-height", fontSizing.lineHeight);
     }
 
     function setFontSize(value) {
@@ -4807,6 +4844,7 @@
       const measure = els.previewMeasure;
       measure.style.fontSize = `${fontSize}px`;
       measure.style.lineHeight = fontSizing.lineHeight;
+      measure.style.fontWeight = 700;
       measure.style.width = `${getAvailableSlideWidth(fontSizing.fallbackWidth)}px`;
       return {
         maxHeight: getAvailableSlideHeight(fontSizing.fallbackHeight),
@@ -4942,6 +4980,10 @@
         if (event.key === "ArrowRight" || event.key === "PageDown" || event.key === " ") go(1);
         if (event.key === "ArrowLeft" || event.key === "PageUp") go(-1);
       });
+      window.addEventListener("resize", debounce(() => {
+        updatePreviewScale();
+        if (!getDisplayDocument()) rebuildSlides();
+      }, 120));
 
       setAutoFit(state.autoFit);
       setInterval(() => renderDisplay(state.slides[state.slideIndex] || ""), 1000);
