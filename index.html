@@ -5050,7 +5050,10 @@
         content.append(text);
         frame.append(content);
         button.append(label, frame);
-        button.addEventListener("click", () => goToSlide(index));
+        button.addEventListener("click", event => {
+          event.currentTarget.blur();
+          goToSlide(index);
+        });
         els.slideGallery.append(button);
       });
 
@@ -5552,7 +5555,8 @@
           if (event.key === "Escape") closeImportPreview();
           return;
         }
-        if (/^(BUTTON|INPUT|SELECT|TEXTAREA)$/.test(event.target.tagName)) return;
+        const isSlideThumb = event.target.classList?.contains("slide-thumb");
+        if (!isSlideThumb && /^(BUTTON|INPUT|SELECT|TEXTAREA)$/.test(event.target.tagName)) return;
         if (event.key === "ArrowRight" || event.key === "PageDown" || event.key === " ") go(1);
         if (event.key === "ArrowLeft" || event.key === "PageUp") go(-1);
       });
