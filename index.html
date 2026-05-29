@@ -43,6 +43,27 @@
     button:hover { background: var(--accent-strong); }
     button:disabled { cursor: not-allowed; opacity: 0.45; }
 
+    button.busy {
+      align-items: center;
+      display: inline-flex;
+      gap: 8px;
+      justify-content: center;
+    }
+
+    button.busy::before {
+      animation: spin 0.8s linear infinite;
+      border: 2px solid currentColor;
+      border-right-color: transparent;
+      border-radius: 50%;
+      content: "";
+      height: 14px;
+      width: 14px;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
     .shell {
       display: grid;
       grid-template-columns: minmax(280px, 360px) minmax(0, 1fr);
@@ -109,8 +130,16 @@
       gap: 10px;
     }
 
+    .hidden { display: none !important; }
+
     .secondary { background: white; border-color: var(--line); color: var(--text); }
     .secondary:hover { background: #edf1f3; }
+
+    .import-actions {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 8px;
+    }
 
     .status {
       border-top: 1px solid var(--line);
@@ -176,11 +205,85 @@
       text-align: center;
     }
 
+    .dialog-backdrop {
+      align-items: center;
+      background: rgba(20, 28, 35, 0.52);
+      display: flex;
+      inset: 0;
+      justify-content: center;
+      padding: 24px;
+      position: fixed;
+      z-index: 20;
+    }
+
+    .dialog {
+      background: white;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      box-shadow: var(--shadow);
+      display: flex;
+      flex-direction: column;
+      max-height: min(720px, calc(100vh - 48px));
+      max-width: 680px;
+      overflow: hidden;
+      width: min(680px, 100%);
+    }
+
+    .dialog header {
+      border-bottom: 1px solid var(--line);
+      padding: 18px 20px;
+    }
+
+    .dialog h2 {
+      font-size: 1.12rem;
+      line-height: 1.25;
+      margin: 0;
+    }
+
+    .dialog-body {
+      overflow: auto;
+      padding: 18px 20px;
+    }
+
+    .import-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-top: 16px;
+    }
+
+    .import-item {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 12px;
+    }
+
+    .import-item strong {
+      display: block;
+      line-height: 1.3;
+    }
+
+    .import-item span {
+      color: var(--muted);
+      display: block;
+      font-size: 0.9rem;
+      margin-top: 4px;
+    }
+
+    .dialog-footer {
+      border-top: 1px solid var(--line);
+      display: flex;
+      gap: 10px;
+      justify-content: flex-end;
+      padding: 14px 20px;
+    }
+
     @media (max-width: 820px) {
       .shell { grid-template-columns: 1fr; padding: 14px; }
       .controls { position: static; }
       .stage { min-height: 62vh; }
       .stage-header { flex-direction: column; }
+      .dialog-footer { flex-direction: column-reverse; }
     }
   </style>
 </head>
@@ -195,6 +298,15 @@
       <div class="field">
         <label for="songSelect">Song</label>
         <select id="songSelect"></select>
+      </div>
+
+      <div class="field">
+        <div class="section-label">Import</div>
+        <div class="import-actions">
+          <button id="importPdf" class="secondary" type="button">Import PDF</button>
+          <input id="pdfFile" class="hidden" type="file" accept="application/pdf">
+        </div>
+        <p id="importStatus" class="hint">Imported songs are available until this page is closed.</p>
       </div>
 
       <div class="field">
@@ -238,6 +350,21 @@
       </div>
     </section>
   </main>
+  <div id="importDialog" class="dialog-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="importDialogTitle">
+    <section class="dialog">
+      <header>
+        <h2 id="importDialogTitle">Review PDF import</h2>
+      </header>
+      <div class="dialog-body">
+        <p id="importSummary" class="hint"></p>
+        <div id="importList" class="import-list"></div>
+      </div>
+      <footer class="dialog-footer">
+        <button id="cancelImport" class="secondary" type="button">Cancel</button>
+        <button id="confirmImport" type="button">Add songs</button>
+      </footer>
+    </section>
+  </div>
   <script>
     const songs = [
       {
@@ -4122,11 +4249,25 @@
       fontSize: 64,
       slideIndex: 0,
       slides: [],
-      displayWindow: null
+      displayWindow: null,
+      pendingImport: []
+    };
+
+    const pdfJsConfig = {
+      script: "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js",
+      worker: "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js"
     };
 
     const els = {
       songSelect: document.getElementById("songSelect"),
+      importPdf: document.getElementById("importPdf"),
+      pdfFile: document.getElementById("pdfFile"),
+      importStatus: document.getElementById("importStatus"),
+      importDialog: document.getElementById("importDialog"),
+      importSummary: document.getElementById("importSummary"),
+      importList: document.getElementById("importList"),
+      cancelImport: document.getElementById("cancelImport"),
+      confirmImport: document.getElementById("confirmImport"),
       fontSize: document.getElementById("fontSize"),
       fontSizeNumber: document.getElementById("fontSizeNumber"),
       openDisplay: document.getElementById("openDisplay"),
@@ -4210,6 +4351,257 @@
         clearTimeout(id);
         id = setTimeout(fn, wait);
       };
+    }
+
+    let pdfJsLoadPromise = null;
+
+    function loadPdfJs() {
+      if (window.pdfjsLib) {
+        window.pdfjsLib.GlobalWorkerOptions.workerSrc = pdfJsConfig.worker;
+        return Promise.resolve(window.pdfjsLib);
+      }
+
+      if (!pdfJsLoadPromise) {
+        pdfJsLoadPromise = new Promise((resolve, reject) => {
+          const script = document.createElement("script");
+          script.src = pdfJsConfig.script;
+          script.onload = () => {
+            if (!window.pdfjsLib) {
+              reject(new Error("PDF.js loaded but did not initialize."));
+              return;
+            }
+            window.pdfjsLib.GlobalWorkerOptions.workerSrc = pdfJsConfig.worker;
+            resolve(window.pdfjsLib);
+          };
+          script.onerror = () => reject(new Error("Could not load PDF.js. Check your internet connection."));
+          document.head.append(script);
+        });
+      }
+
+      return pdfJsLoadPromise;
+    }
+
+    async function importPdfFile(file) {
+      if (!file) return;
+
+      setImportBusy(true);
+      setImportStatus(`Reading ${file.name}...`);
+
+      try {
+        const pdfjsLib = await loadPdfJs();
+        const data = await file.arrayBuffer();
+        setImportStatus(`Parsing ${file.name}...`);
+        const pdf = await pdfjsLib.getDocument({ data }).promise;
+        setImportStatus(`Detecting songs in ${file.name}...`);
+        const lines = await extractPdfLines(pdf);
+        const importedSongs = detectSongsFromLines(lines, file.name);
+
+        if (!importedSongs.length) {
+          setImportStatus("No usable lyrics were found. Scanned PDFs need OCR and are not supported.");
+          return;
+        }
+
+        state.pendingImport = importedSongs;
+        renderImportPreview(importedSongs, file.name);
+      } catch (error) {
+        setImportStatus(error.message || "Could not import this PDF.");
+      } finally {
+        setImportBusy(false);
+        els.pdfFile.value = "";
+      }
+    }
+
+    async function extractPdfLines(pdf) {
+      const pages = [];
+
+      for (let pageNumber = 1; pageNumber <= pdf.numPages; pageNumber += 1) {
+        const page = await pdf.getPage(pageNumber);
+        const viewport = page.getViewport({ scale: 1 });
+        const textContent = await page.getTextContent();
+        const items = textContent.items
+          .filter(item => item.str && item.str.trim())
+          .map(item => {
+            const transform = item.transform;
+            const fontSize = Math.max(1, Math.hypot(transform[0], transform[1]) || item.height || 1);
+            return {
+              text: item.str,
+              x: transform[4],
+              y: transform[5],
+              width: item.width || 0,
+              fontSize,
+              fontName: item.fontName || "",
+              page: pageNumber,
+              pageHeight: viewport.height
+            };
+          });
+
+        pages.push(...groupTextItemsIntoLines(items));
+      }
+
+      return pages;
+    }
+
+    function groupTextItemsIntoLines(items) {
+      const sorted = items.slice().sort((a, b) => b.y - a.y || a.x - b.x);
+      const fontSizes = sorted.map(item => item.fontSize).sort((a, b) => a - b);
+      const medianFontSize = fontSizes[Math.floor(fontSizes.length / 2)] || 12;
+      const yTolerance = Math.max(2, medianFontSize * 0.35);
+      const lines = [];
+
+      for (const item of sorted) {
+        let line = lines.find(candidate => Math.abs(candidate.y - item.y) <= yTolerance);
+        if (!line) {
+          line = { page: item.page, pageHeight: item.pageHeight, y: item.y, items: [] };
+          lines.push(line);
+        }
+        line.items.push(item);
+      }
+
+      return lines
+        .map(line => buildPdfLine(line, medianFontSize))
+        .filter(line => line.text && !isPageNumberLine(line))
+        .sort((a, b) => a.page - b.page || b.y - a.y);
+    }
+
+    function buildPdfLine(line, medianFontSize) {
+      const items = line.items.sort((a, b) => a.x - b.x);
+      let text = "";
+      let previous = null;
+      const fontSize = Math.max(...items.map(item => item.fontSize), medianFontSize);
+      const fontNames = new Set();
+
+      for (const item of items) {
+        fontNames.add(item.fontName);
+        if (previous) {
+          const gap = item.x - (previous.x + previous.width);
+          if (gap > fontSize * 0.25 && text && !text.endsWith(" ") && !/^[,.;:!?)]/.test(item.text)) {
+            text += " ";
+          }
+        }
+        text += item.text;
+        previous = item;
+      }
+
+      return {
+        text: text.replace(/\s+/g, " ").trim(),
+        page: line.page,
+        pageHeight: line.pageHeight,
+        y: line.y,
+        fontSize,
+        fontNames: Array.from(fontNames)
+      };
+    }
+
+    function isPageNumberLine(line) {
+      if (!/^\d+$/.test(line.text)) return false;
+      return line.y < line.pageHeight * 0.12 || line.y > line.pageHeight * 0.88;
+    }
+
+    function detectSongsFromLines(lines, fileName) {
+      const analyzedLines = annotatePdfLines(lines);
+      const songsFromPdf = [];
+      let currentSong = null;
+      let currentLines = [];
+
+      for (const line of analyzedLines) {
+        if (line.isTitle) {
+          if (currentSong && currentLines.length) {
+            currentSong.sections = detectSections(currentLines);
+            songsFromPdf.push(currentSong);
+          }
+          currentSong = { title: line.text, author: fileName, sections: [] };
+          currentLines = [];
+        } else if (currentSong) {
+          currentLines.push(line);
+        }
+      }
+
+      if (currentSong && currentLines.length) {
+        currentSong.sections = detectSections(currentLines);
+        songsFromPdf.push(currentSong);
+      }
+
+      return songsFromPdf.filter(song => song.sections.length);
+    }
+
+    function annotatePdfLines(lines) {
+      const bodyFontSize = median(lines.map(line => line.fontSize)) || 12;
+
+      return lines.map((line, index) => {
+        const previous = lines[index - 1];
+        const next = lines[index + 1];
+        const gapBefore = previous && previous.page === line.page ? previous.y - line.y : bodyFontSize * 3;
+        const gapAfter = next && next.page === line.page ? line.y - next.y : bodyFontSize * 3;
+        const allCaps = isMostlyUppercase(line.text);
+        const titleBySize = line.fontSize >= bodyFontSize * 1.18;
+        const titleBySpacing = gapBefore > bodyFontSize * 1.45 && gapAfter > bodyFontSize * 1.2;
+        const titleByFont = line.fontNames.some(name => /bold|black|heavy/i.test(name));
+        const isTitle = allCaps
+          && !isSectionMarker(line.text)
+          && !/^\d+$/.test(line.text)
+          && (titleBySize || titleBySpacing || titleByFont);
+
+        return { ...line, gapBefore, gapAfter, isTitle };
+      });
+    }
+
+    function detectSections(lines) {
+      const bodyFontSize = median(lines.map(line => line.fontSize)) || 12;
+      const sections = [];
+      let current = null;
+      let partNumber = 1;
+
+      for (const line of lines) {
+        const marker = parseSectionMarker(line.text);
+        if (marker) {
+          current = addImportedSection(sections, marker.label);
+          if (marker.remainder) current.lines.push(marker.remainder);
+          continue;
+        }
+
+        if (!current || (current.lines.length && line.gapBefore > bodyFontSize * 1.55)) {
+          current = addImportedSection(sections, `Part ${partNumber}`);
+          partNumber += 1;
+        }
+
+        current.lines.push(line.text);
+      }
+
+      return sections.filter(section => section.lines.length);
+    }
+
+    function addImportedSection(sections, label) {
+      const section = { label, lines: [] };
+      sections.push(section);
+      return section;
+    }
+
+    function parseSectionMarker(text) {
+      const verse = text.match(/^(\d+)\.\s*(.*)$/);
+      if (verse) return { label: `Verse ${verse[1]}`, remainder: verse[2].trim() };
+
+      const chorus = text.match(/^(?:ref\.?|refren)\s*[:.-]?\s*(.*)$/i);
+      if (chorus) return { label: "Chorus", remainder: chorus[1].trim() };
+
+      const bridge = text.match(/^(?:bridge|most)\s*[:.-]?\s*(.*)$/i);
+      if (bridge) return { label: "Bridge", remainder: bridge[1].trim() };
+
+      return null;
+    }
+
+    function isSectionMarker(text) {
+      return Boolean(parseSectionMarker(text));
+    }
+
+    function isMostlyUppercase(text) {
+      const letters = text.match(/\p{L}/gu) || [];
+      if (letters.length < 2) return false;
+      return letters.every(letter => letter === letter.toLocaleUpperCase("pl-PL"));
+    }
+
+    function median(values) {
+      const sorted = values.filter(Number.isFinite).sort((a, b) => a - b);
+      return sorted.length ? sorted[Math.floor(sorted.length / 2)] : 0;
     }
 
     function measureLines(fontSize) {
@@ -4319,18 +4711,88 @@
       render();
     }
 
-    function init() {
+    function setImportStatus(message) {
+      els.importStatus.textContent = message;
+    }
+
+    function setImportBusy(isBusy) {
+      els.importPdf.disabled = isBusy;
+      els.importPdf.classList.toggle("busy", isBusy);
+      els.importPdf.textContent = isBusy ? "Importing..." : "Import PDF";
+      els.importPdf.setAttribute("aria-busy", String(isBusy));
+    }
+
+    function renderImportPreview(importedSongs, fileName) {
+      const sectionCount = importedSongs.reduce((total, song) => total + song.sections.length, 0);
+      state.pendingImport = importedSongs;
+      els.importSummary.textContent = `${fileName}: found ${importedSongs.length} song${importedSongs.length === 1 ? "" : "s"} and ${sectionCount} section${sectionCount === 1 ? "" : "s"}. Review the detected structure before adding.`;
+      els.importList.textContent = "";
+
+      importedSongs.forEach(song => {
+        const item = document.createElement("div");
+        const title = document.createElement("strong");
+        const meta = document.createElement("span");
+        item.className = "import-item";
+        title.textContent = song.title;
+        meta.textContent = song.sections.map(section => `${section.label} (${section.lines.length})`).join(", ");
+        item.append(title, meta);
+        els.importList.append(item);
+      });
+
+      els.importDialog.classList.remove("hidden");
+      els.confirmImport.focus();
+      setImportStatus("PDF parsed. Confirm the preview to add songs.");
+    }
+
+    function closeImportPreview() {
+      state.pendingImport = [];
+      els.importDialog.classList.add("hidden");
+      els.importSummary.textContent = "";
+      els.importList.textContent = "";
+    }
+
+    function confirmImport() {
+      if (!state.pendingImport.length) {
+        closeImportPreview();
+        return;
+      }
+
+      const firstImportedIndex = songs.length;
+      const addedCount = state.pendingImport.length;
+      songs.push(...state.pendingImport);
+      state.songIndex = firstImportedIndex;
+      state.slideIndex = 0;
+      refreshSongOptions(firstImportedIndex);
+      closeImportPreview();
+      rebuildSlides();
+      setImportStatus(`Added ${addedCount} imported song${addedCount === 1 ? "" : "s"}.`);
+    }
+
+    function refreshSongOptions(selectedIndex = state.songIndex) {
+      els.songSelect.textContent = "";
       songs.forEach((song, index) => {
         const option = document.createElement("option");
         option.value = index;
         option.textContent = song.title;
         els.songSelect.append(option);
       });
+      els.songSelect.value = String(Math.max(0, Math.min(selectedIndex, songs.length - 1)));
+    }
+
+    function init() {
+      refreshSongOptions();
 
       els.songSelect.addEventListener("change", () => {
         state.songIndex = Number(els.songSelect.value);
         state.slideIndex = 0;
         rebuildSlides();
+      });
+      els.importPdf.addEventListener("click", () => els.pdfFile.click());
+      els.pdfFile.addEventListener("change", event => importPdfFile(event.target.files[0]));
+      els.cancelImport.addEventListener("click", closeImportPreview);
+      els.confirmImport.addEventListener("click", confirmImport);
+      els.importDialog.addEventListener("click", event => {
+        if (event.target === els.importDialog) closeImportPreview();
       });
       els.fontSize.addEventListener("input", event => setFontSize(event.target.value));
       els.fontSizeNumber.addEventListener("change", event => setFontSize(event.target.value));
@@ -4339,6 +4801,10 @@
       els.nextSlide.addEventListener("click", () => go(1));
 
       window.addEventListener("keydown", event => {
+        if (!els.importDialog.classList.contains("hidden")) {
+          if (event.key === "Escape") closeImportPreview();
+          return;
+        }
         if (event.key === "ArrowRight" || event.key === "PageDown" || event.key === " ") go(1);
         if (event.key === "ArrowLeft" || event.key === "PageUp") go(-1);
       });
