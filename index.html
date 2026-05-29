@@ -4942,7 +4942,26 @@
       Array.from(els.slideGallery.children).forEach((thumb, index) => {
         const isActive = index === state.slideIndex;
         thumb.setAttribute("aria-current", String(isActive));
-        if (isActive) thumb.scrollIntoView({ block: "nearest", inline: "nearest" });
+        if (isActive) keepActiveThumbnailPosition(thumb);
+      });
+    }
+
+    function keepActiveThumbnailPosition(thumb) {
+      requestAnimationFrame(() => {
+        const list = els.slideGallery;
+        const listStyle = window.getComputedStyle(list);
+        const isHorizontal = listStyle.flexDirection === "row";
+        const listBox = list.getBoundingClientRect();
+        const thumbBox = thumb.getBoundingClientRect();
+
+        if (isHorizontal) {
+          const targetLeft = list.scrollLeft + thumbBox.left - listBox.left - ((list.clientWidth - thumbBox.width) / 2);
+          list.scrollTo({ left: Math.max(0, targetLeft), behavior: "smooth" });
+          return;
+        }
+
+        const targetTop = list.scrollTop + thumbBox.top - listBox.top - ((list.clientHeight - thumbBox.height) / 2);
+        list.scrollTo({ top: Math.max(0, targetTop), behavior: "smooth" });
       });
     }
 
