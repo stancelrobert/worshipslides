@@ -111,6 +111,7 @@
     }
 
     select,
+    input[type="text"],
     input[type="number"] {
       width: 100%;
       min-height: 42px;
@@ -119,6 +120,46 @@
       border-radius: 8px;
       background: white;
       color: var(--text);
+    }
+
+    .song-picker {
+      position: relative;
+    }
+
+    .song-results {
+      background: white;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      box-shadow: var(--shadow);
+      display: flex;
+      flex-direction: column;
+      left: 0;
+      list-style: none;
+      margin: 6px 0 0;
+      max-height: 260px;
+      overflow: auto;
+      padding: 6px;
+      position: absolute;
+      right: 0;
+      top: 100%;
+      z-index: 10;
+    }
+
+    .song-result {
+      border-radius: 6px;
+      cursor: pointer;
+      line-height: 1.25;
+      padding: 9px 10px;
+    }
+
+    .song-result:hover,
+    .song-result[aria-selected="true"] {
+      background: #edf1f3;
+    }
+
+    .song-result-empty {
+      color: var(--muted);
+      cursor: default;
     }
 
     input[type="range"] { width: 100%; accent-color: var(--accent); }
@@ -456,8 +497,11 @@
       </div>
 
       <div class="field">
-        <label for="songSelect">Song</label>
-        <select id="songSelect"></select>
+        <label for="songSearch">Song</label>
+        <div class="song-picker">
+          <input id="songSearch" type="text" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="songResults">
+          <ul id="songResults" class="song-results hidden" role="listbox"></ul>
+        </div>
       </div>
 
       <div class="field">
@@ -4421,6 +4465,7 @@
 
     const state = {
       songIndex: 0,
+      songResultIndex: 0,
       fontSize: 64,
       manualFontSize: 64,
       autoFit: true,
@@ -4449,7 +4494,8 @@
     };
 
     const els = {
-      songSelect: document.getElementById("songSelect"),
+      songSearch: document.getElementById("songSearch"),
+      songResults: document.getElementById("songResults"),
       importPdf: document.getElementById("importPdf"),
       pdfFile: document.getElementById("pdfFile"),
       importStatus: document.getElementById("importStatus"),
@@ -5168,23 +5214,130 @@
     }
 
     function refreshSongOptions(selectedIndex = state.songIndex) {
-      els.songSelect.textContent = "";
-      songs.forEach((song, index) => {
-        const option = document.createElement("option");
-        option.value = index;
-        option.textContent = song.title;
-        els.songSelect.append(option);
+      state.songIndex = Math.max(0, Math.min(selectedIndex, songs.length - 1));
+      els.songSearch.value = songs[state.songIndex]?.title || "";
+      renderSongResults("");
+      hideSongResults();
+    }
+
+    function normalizeSearch(text) {
+      return text
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .toLowerCase();
+    }
+
+    function getSongMatches(query) {
+      const normalizedQuery = normalizeSearch(query.trim());
+      if (!normalizedQuery) return songs.map((song, index) => ({ song, index }));
+
+      return songs
+        .map((song, index) => ({ song, index, title: normalizeSearch(song.title) }))
+        .filter(item => item.title.includes(normalizedQuery));
+    }
+
+    function renderSongResults(query = els.songSearch.value) {
+      const matches = getSongMatches(query);
+      els.songResults.textContent = "";
+      state.songResultIndex = Math.min(state.songResultIndex, Math.max(0, matches.length - 1));
+
+      if (!matches.length) {
+        const item = document.createElement("li");
+        item.className = "song-result song-result-empty";
+        item.textContent = "No matching songs";
+        els.songResults.append(item);
+        return matches;
+      }
+
+      matches.forEach(({ song, index }, resultIndex) => {
+        const item = document.createElement("li");
+        item.className = "song-result";
+        item.id = `songResult-${resultIndex}`;
+        item.role = "option";
+        item.textContent = song.title;
+        item.setAttribute("aria-selected", String(resultIndex === state.songResultIndex));
+        item.addEventListener("mousedown", event => {
+          event.preventDefault();
+          selectSong(index);
+        });
+        els.songResults.append(item);
       });
-      els.songSelect.value = String(Math.max(0, Math.min(selectedIndex, songs.length - 1)));
+
+      els.songSearch.setAttribute("aria-activedescendant", `songResult-${state.songResultIndex}`);
+      return matches;
+    }
+
+    function showSongResults() {
+      renderSongResults();
+      els.songResults.classList.remove("hidden");
+      els.songSearch.setAttribute("aria-expanded", "true");
+    }
+
+    function hideSongResults() {
+      els.songResults.classList.add("hidden");
+      els.songSearch.setAttribute("aria-expanded", "false");
+      els.songSearch.removeAttribute("aria-activedescendant");
+    }
+
+    function selectSong(index) {
+      state.songIndex = Math.max(0, Math.min(index, songs.length - 1));
+      state.slideIndex = 0;
+      els.songSearch.value = songs[state.songIndex].title;
+      hideSongResults();
+      rebuildSlides();
+    }
+
+    function moveSongResult(delta) {
+      const matches = getSongMatches(els.songSearch.value);
+      if (!matches.length) return matches;
+      state.songResultIndex = Math.max(0, Math.min(matches.length - 1, state.songResultIndex + delta));
+      renderSongResults();
+      const active = els.songResults.querySelector(`[aria-selected="true"]`);
+      if (active) active.scrollIntoView({ block: "nearest" });
+      return matches;
     }
 
     function init() {
       refreshSongOptions();
 
-      els.songSelect.addEventListener("change", () => {
-        state.songIndex = Number(els.songSelect.value);
-        state.slideIndex = 0;
-        rebuildSlides();
+      els.songSearch.addEventListener("focus", showSongResults);
+      els.songSearch.addEventListener("input", () => {
+        state.songResultIndex = 0;
+        showSongResults();
+      });
+      els.songSearch.addEventListener("keydown", event => {
+        if (event.key === "ArrowDown") {
+          event.preventDefault();
+          showSongResults();
+          moveSongResult(1);
+          return;
+        }
+
+        if (event.key === "ArrowUp") {
+          event.preventDefault();
+          showSongResults();
+          moveSongResult(-1);
+          return;
+        }
+
+        if (event.key === "Enter") {
+          const matches = getSongMatches(els.songSearch.value);
+          if (!matches.length) return;
+          event.preventDefault();
+          selectSong(matches[state.songResultIndex]?.index ?? matches[0].index);
+          return;
+        }
+
+        if (event.key === "Escape") {
+          hideSongResults();
+          els.songSearch.value = songs[state.songIndex]?.title || "";
+        }
+      });
+      els.songSearch.addEventListener("blur", () => {
+        window.setTimeout(() => {
+          hideSongResults();
+          els.songSearch.value = songs[state.songIndex]?.title || "";
+        }, 120);
       });
       els.importPdf.addEventListener("click", () => els.pdfFile.click());
       els.pdfFile.addEventListener("change", event => importPdfFile(event.target.files[0]));
