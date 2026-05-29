@@ -5040,7 +5040,7 @@
         button.setAttribute("aria-label", `Go to slide ${index + 1}`);
 
         label.className = "slide-thumb-label";
-        label.textContent = `Slide ${index + 1}`;
+        label.textContent = getSlideThumbnailTitle(slide);
 
         frame.className = "slide-thumb-frame";
         content.className = "slide-thumb-content";
@@ -5059,6 +5059,21 @@
 
       updateGalleryScale();
       updateGallerySelection();
+    }
+
+    function getSlideThumbnailTitle(slide) {
+      const maxLength = 20;
+      const words = slide.replace(/\s+/g, " ").trim().split(" ").filter(Boolean);
+      let title = "";
+
+      for (const word of words) {
+        const candidate = title ? `${title} ${word}` : word;
+        if (candidate.length > maxLength) break;
+        title = candidate;
+      }
+
+      title = title.replace(/[^\p{L}\p{N}]+$/gu, "");
+      return `${title || "Empty slide"}...`;
     }
 
     function goToSlide(index) {
