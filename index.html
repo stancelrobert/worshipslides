@@ -513,7 +513,7 @@
         <p id="importStatus" class="hint">Imported songs are available until this page is closed.</p>
       </div>
 
-      <div class="field">
+      <div class="field hidden">
         <label for="fontSize">Current slide font size</label>
         <label class="toggle-row">
           <input id="autoFit" type="checkbox" checked>
@@ -4995,9 +4995,7 @@
       updatePreviewScale();
       syncFontControls(displayFontSize);
       els.slideStatus.textContent = `${state.slideIndex + 1} / ${state.slides.length}`;
-      els.splitStatus.textContent = isSlideAutoFit(state.slideIndex)
-        ? `${state.slides.length} slide${state.slides.length === 1 ? "" : "s"} - auto ${displayFontSize}px`
-        : `${state.slides.length} slide${state.slides.length === 1 ? "" : "s"} - manual ${displayFontSize}px`;
+      els.splitStatus.textContent = `${state.slides.length} slide${state.slides.length === 1 ? "" : "s"} - auto ${displayFontSize}px`;
       els.prevSlide.disabled = state.slideIndex === 0;
       els.nextSlide.disabled = state.slideIndex >= state.slides.length - 1;
       els.blankSlide.setAttribute("aria-pressed", String(state.isBlank));
@@ -5156,8 +5154,6 @@
     }
 
     function getDisplayFontSize(slide, slideIndex = state.slideIndex) {
-      const override = state.slideFontSizes[getSlideFontKey(slideIndex)];
-      if (override) return override;
       return findLargestFittingFontSize(slide, fontSizing.min, fontSizing.autoMax);
     }
 
@@ -5335,7 +5331,7 @@
       const visibleSize = displayFontSize;
       els.fontSize.value = Math.min(fontSizing.manualMax, visibleSize);
       els.fontSizeNumber.value = visibleSize;
-      els.autoFit.checked = isSlideAutoFit();
+      els.autoFit.checked = true;
     }
 
     function go(delta) {
