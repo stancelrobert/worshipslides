@@ -504,7 +504,7 @@
         </div>
       </div>
 
-      <div class="field">
+      <div class="field hidden">
         <div class="section-label">Import</div>
         <div class="import-actions">
           <button id="importPdf" class="secondary" type="button">Import PDF</button>
@@ -4638,7 +4638,7 @@
         const importedSongs = detectSongsFromLines(lines, file.name);
 
         if (!importedSongs.length) {
-          setImportStatus("No usable lyrics were found. Scanned PDFs need OCR and are not supported.");
+          renderImportDebug(lines, file.name, pdf.numPages);
           return;
         }
 
@@ -4672,7 +4672,8 @@
               fontSize,
               fontName: item.fontName || "",
               page: pageNumber,
-              pageHeight: viewport.height
+              pageHeight: viewport.height,
+              pageWidth: viewport.width
             };
           });
 
@@ -4692,7 +4693,7 @@
       for (const item of sorted) {
         let line = lines.find(candidate => Math.abs(candidate.y - item.y) <= yTolerance);
         if (!line) {
-          line = { page: item.page, pageHeight: item.pageHeight, y: item.y, items: [] };
+          line = { page: item.page, pageHeight: item.pageHeight, pageWidth: item.pageWidth, y: item.y, items: [] };
           lines.push(line);
         }
         line.items.push(item);
@@ -4727,6 +4728,9 @@
         text: text.replace(/\s+/g, " ").trim(),
         page: line.page,
         pageHeight: line.pageHeight,
+        pageWidth: line.pageWidth,
+        x: Math.min(...items.map(item => item.x)),
+        width: Math.max(...items.map(item => item.x + item.width)) - Math.min(...items.map(item => item.x)),
         y: line.y,
         fontSize,
         fontNames: Array.from(fontNames)
@@ -4777,13 +4781,34 @@
         const titleBySize = line.fontSize >= bodyFontSize * 1.18;
         const titleBySpacing = gapBefore > bodyFontSize * 1.45 && gapAfter > bodyFontSize * 1.2;
         const titleByFont = line.fontNames.some(name => /bold|black|heavy/i.test(name));
-        const isTitle = allCaps
+        const titleByPosition = isCenteredLine(line) || line.y > line.pageHeight * 0.72;
+        const titleLikeText = isTitleLikeLine(line.text);
+        const isTitle = titleLikeText
           && !isSectionMarker(line.text)
           && !/^\d+$/.test(line.text)
-          && (titleBySize || titleBySpacing || titleByFont);
+          && (
+            (allCaps && (titleBySize || titleBySpacing || titleByFont || titleByPosition))
+            || (titleBySize && (titleBySpacing || titleByFont || titleByPosition))
+            || (titleByFont && (titleBySpacing || titleByPosition))
+          );
 
         return { ...line, gapBefore, gapAfter, isTitle };
       });
+    }
+
+    function isCenteredLine(line) {
+      if (!line.pageWidth || !line.width) return false;
+      const center = line.x + (line.width / 2);
+      return Math.abs(center - (line.pageWidth / 2)) < line.pageWidth * 0.2;
+    }
+
+    function isTitleLikeLine(text) {
+      const clean = text.trim();
+      const letters = clean.match(/\p{L}/gu) || [];
+      if (letters.length < 3 || clean.length > 80) return false;
+      if (/[.!?;:]$/.test(clean)) return false;
+      if (/^(?:ref\.?|refren|zwrotka|bridge|most|verse|chorus)\b/i.test(clean)) return false;
+      return true;
     }
 
     function detectSections(lines) {
@@ -4808,7 +4833,7 @@
         current.lines.push(line.text);
       }
 
-      return sections.filter(section => section.lines.length);
+      return inferSectionLabels(sections.filter(section => section.lines.length));
     }
 
     function addImportedSection(sections, label) {
@@ -4821,13 +4846,48 @@
       const verse = text.match(/^(\d+)\.\s*(.*)$/);
       if (verse) return { label: `Verse ${verse[1]}`, remainder: verse[2].trim() };
 
-      const chorus = text.match(/^(?:ref\.?|refren)\s*[:.-]?\s*(.*)$/i);
+      const namedVerse = text.match(/^(?:zwrotka|zw\.?|verse)\s*(\d+)?\s*[:.-]?\s*(.*)$/i);
+      if (namedVerse) return { label: namedVerse[1] ? `Verse ${namedVerse[1]}` : "Verse", remainder: namedVerse[2].trim() };
+
+      const chorus = text.match(/^(?:ref\.?|refren|chorus|refrain)\s*[:.-]?\s*(.*)$/i);
       if (chorus) return { label: "Chorus", remainder: chorus[1].trim() };
 
       const bridge = text.match(/^(?:bridge|most)\s*[:.-]?\s*(.*)$/i);
       if (bridge) return { label: "Bridge", remainder: bridge[1].trim() };
 
       return null;
+    }
+
+    function inferSectionLabels(sections) {
+      const counts = new Map();
+      sections.forEach(section => {
+        const key = normalizeSectionText(section.lines);
+        counts.set(key, (counts.get(key) || 0) + 1);
+      });
+
+      let verseNumber = 1;
+      return sections.map(section => {
+        const explicit = !/^Part \d+$/.test(section.label);
+        if (explicit) return section;
+
+        const key = normalizeSectionText(section.lines);
+        if (counts.get(key) > 1) return { ...section, label: "Chorus" };
+
+        const label = `Verse ${verseNumber}`;
+        verseNumber += 1;
+        return { ...section, label };
+      });
+    }
+
+    function normalizeSectionText(lines) {
+      return lines
+        .join(" ")
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .replace(/[^\p{L}\p{N}\s]/gu, "")
+        .replace(/\s+/g, " ")
+        .trim()
+        .toLowerCase();
     }
 
     function isSectionMarker(text) {
@@ -5381,11 +5441,43 @@
       setImportStatus("PDF parsed. Confirm the preview to add songs.");
     }
 
+    function renderImportDebug(lines, fileName, pageCount) {
+      state.pendingImport = [];
+      els.importSummary.textContent = `${fileName}: no songs matched the current importer rules. PDF.js extracted ${lines.length} text line${lines.length === 1 ? "" : "s"} from ${pageCount} page${pageCount === 1 ? "" : "s"}.`;
+      els.importList.textContent = "";
+
+      const samples = lines.slice(0, 40);
+      if (!samples.length) {
+        const item = document.createElement("div");
+        item.className = "import-item";
+        item.textContent = "No text lines were extracted. This file may be scanned/image-based or may require OCR.";
+        els.importList.append(item);
+      } else {
+        samples.forEach(line => {
+          const item = document.createElement("div");
+          const title = document.createElement("strong");
+          const meta = document.createElement("span");
+          item.className = "import-item";
+          title.textContent = line.text;
+          meta.textContent = `Page ${line.page}, y ${Math.round(line.y)}, font ${Math.round(line.fontSize)}`;
+          item.append(title, meta);
+          els.importList.append(item);
+        });
+      }
+
+      els.importDialog.classList.remove("hidden");
+      els.confirmImport.disabled = true;
+      els.cancelImport.textContent = "Close";
+      setImportStatus("PDF text extracted, but no songs were detected. Review the raw line sample.");
+    }
+
     function closeImportPreview() {
       state.pendingImport = [];
       els.importDialog.classList.add("hidden");
       els.importSummary.textContent = "";
       els.importList.textContent = "";
+      els.confirmImport.disabled = false;
+      els.cancelImport.textContent = "Cancel";
     }
 
     function confirmImport() {
