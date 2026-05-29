@@ -475,6 +475,8 @@
         </div>
       </div>
 
+      <button id="blankSlide" class="secondary" type="button" aria-pressed="false">Blank</button>
+
       <p class="hint">Tip: after opening the audience display, drag it to the external screen and use the browser fullscreen command.</p>
 
       <div class="status">
@@ -4406,6 +4408,7 @@
       fontSize: 64,
       manualFontSize: 64,
       autoFit: true,
+      isBlank: false,
       slideIndex: 0,
       slides: [],
       displayWindow: null,
@@ -4443,6 +4446,7 @@
       fontSize: document.getElementById("fontSize"),
       fontSizeNumber: document.getElementById("fontSizeNumber"),
       openDisplay: document.getElementById("openDisplay"),
+      blankSlide: document.getElementById("blankSlide"),
       prevSlide: document.getElementById("prevSlide"),
       nextSlide: document.getElementById("nextSlide"),
       displayStatus: document.getElementById("displayStatus"),
@@ -4845,12 +4849,13 @@
 
     function render() {
       const song = songs[state.songIndex];
-      const slide = state.slides[state.slideIndex] || "";
-      const displayFontSize = getDisplayFontSize(slide);
+      const activeSlide = state.slides[state.slideIndex] || "";
+      const slide = state.isBlank ? "" : activeSlide;
+      const displayFontSize = getDisplayFontSize(activeSlide);
       syncPreviewLayout();
       els.songTitle.textContent = song.title;
       els.songMeta.textContent = song.author;
-      els.previewText.textContent = slide || "No lyrics on this slide.";
+      els.previewText.textContent = state.isBlank ? "" : (slide || "No lyrics on this slide.");
       els.previewText.classList.toggle("empty", !slide);
       els.previewSlide.style.fontSize = `${displayFontSize}px`;
       updatePreviewScale();
@@ -4861,6 +4866,8 @@
         : `${state.slides.length} slide${state.slides.length === 1 ? "" : "s"} at ${state.fontSize}px`;
       els.prevSlide.disabled = state.slideIndex === 0;
       els.nextSlide.disabled = state.slideIndex >= state.slides.length - 1;
+      els.blankSlide.setAttribute("aria-pressed", String(state.isBlank));
+      els.blankSlide.textContent = state.isBlank ? "Show lyrics" : "Blank";
       updateGallerySelection();
       renderDisplay(slide, displayFontSize);
     }
@@ -4911,6 +4918,7 @@
 
     function goToSlide(index) {
       state.slideIndex = Math.max(0, Math.min(state.slides.length - 1, index));
+      state.isBlank = false;
       render();
     }
 
@@ -5058,6 +5066,12 @@
 
     function go(delta) {
       state.slideIndex = Math.max(0, Math.min(state.slides.length - 1, state.slideIndex + delta));
+      state.isBlank = false;
+      render();
+    }
+
+    function toggleBlankSlide() {
+      state.isBlank = !state.isBlank;
       render();
     }
 
@@ -5148,6 +5162,7 @@
       els.fontSize.addEventListener("input", event => setManualFontSize(event.target.value));
       els.fontSizeNumber.addEventListener("change", event => setManualFontSize(event.target.value));
       els.openDisplay.addEventListener("click", openDisplay);
+      els.blankSlide.addEventListener("click", toggleBlankSlide);
       els.prevSlide.addEventListener("click", () => go(-1));
       els.nextSlide.addEventListener("click", () => go(1));
 
@@ -5167,7 +5182,10 @@
       }, 120));
 
       setAutoFit(state.autoFit);
-      setInterval(() => renderDisplay(state.slides[state.slideIndex] || ""), 1000);
+      setInterval(() => {
+        const slide = state.isBlank ? "" : (state.slides[state.slideIndex] || "");
+        renderDisplay(slide);
+      }, 1000);
     }
 
     init();
