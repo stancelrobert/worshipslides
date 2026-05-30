@@ -458,6 +458,108 @@
       padding: 18px 20px;
     }
 
+    .songbook-dialog {
+      height: min(720px, calc(100vh - 48px));
+      max-width: 860px;
+      width: min(860px, 100%);
+    }
+
+    .songbook-body {
+      flex: 1;
+      min-height: 0;
+      overflow: hidden;
+      padding: 0;
+    }
+
+    .songbook-track {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 50%));
+      height: 100%;
+      transition: transform 0.22s ease;
+      width: 200%;
+    }
+
+    .songbook-track.editing {
+      transform: translateX(-50%);
+    }
+
+    .songbook-panel {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      min-height: 0;
+      overflow: auto;
+      padding: 18px 20px;
+    }
+
+    .songbook-list {
+      display: grid;
+      gap: 10px;
+    }
+
+    .songbook-card {
+      background: white;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      color: var(--text);
+      cursor: pointer;
+      padding: 12px;
+      text-align: left;
+    }
+
+    .songbook-card:hover {
+      background: #edf1f3;
+    }
+
+    .songbook-card strong,
+    .songbook-card span {
+      display: block;
+    }
+
+    .songbook-card span,
+    .editor-status {
+      color: var(--muted);
+      font-size: 0.9rem;
+      line-height: 1.4;
+    }
+
+    .editor-bar {
+      align-items: center;
+      display: flex;
+      gap: 10px;
+      justify-content: space-between;
+    }
+
+    .back-button {
+      background: white;
+      border-color: var(--line);
+      color: var(--text);
+      min-width: 42px;
+      padding: 0 12px;
+    }
+
+    .song-editor-title {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .song-editor-title h3 {
+      font-size: 1rem;
+      line-height: 1.25;
+      margin: 0;
+    }
+
+    .song-editor {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      color: var(--text);
+      font: 0.95rem/1.5 ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+      min-height: 330px;
+      padding: 12px;
+      resize: vertical;
+      width: 100%;
+    }
+
     .import-list {
       display: flex;
       flex-direction: column;
@@ -516,6 +618,10 @@
       .slide-thumb {
         flex: 0 0 170px;
       }
+      .editor-bar {
+        align-items: stretch;
+        flex-direction: column;
+      }
       .dialog-footer { flex-direction: column-reverse; }
     }
   </style>
@@ -535,6 +641,8 @@
           <ul id="songResults" class="song-results hidden" role="listbox"></ul>
         </div>
       </div>
+
+      <button id="openSongbookEditor" class="secondary" type="button">Edit songbook</button>
 
       <div class="field hidden">
         <div class="section-label">Import</div>
@@ -615,6 +723,36 @@
       <footer class="dialog-footer">
         <button id="cancelImport" class="secondary" type="button">Cancel</button>
         <button id="confirmImport" type="button">Add songs</button>
+      </footer>
+    </section>
+  </div>
+  <div id="songbookDialog" class="dialog-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="songbookDialogTitle">
+    <section class="dialog songbook-dialog">
+      <header>
+        <h2 id="songbookDialogTitle">Edit songbook</h2>
+      </header>
+      <div class="dialog-body songbook-body">
+        <div id="songbookTrack" class="songbook-track">
+          <section class="songbook-panel" aria-label="Song list">
+            <p class="hint">Choose a song to edit its lyrics.</p>
+            <div id="songbookList" class="songbook-list"></div>
+          </section>
+          <section class="songbook-panel" aria-label="Song editor">
+            <div class="editor-bar">
+              <button id="songbookBack" class="back-button" type="button" aria-label="Back to song list">&#8592;</button>
+              <div class="song-editor-title">
+                <h3 id="songbookEditTitle">Song</h3>
+                <div id="songbookEditStatus" class="editor-status"></div>
+              </div>
+              <button id="songbookSaveTop" type="button">Save</button>
+            </div>
+            <textarea id="songbookText" class="song-editor" spellcheck="false"></textarea>
+            <button id="songbookSaveBottom" type="button">Save</button>
+          </section>
+        </div>
+      </div>
+      <footer class="dialog-footer">
+        <button id="closeSongbookEditor" class="secondary" type="button">Close</button>
       </footer>
     </section>
   </div>
@@ -4533,7 +4671,12 @@ Any use not expressly permitted by this license is prohibited.</pre>
       slideIndex: 0,
       slides: [],
       displayWindow: null,
-      pendingImport: []
+      pendingImport: [],
+      editingSongIndex: null
+    };
+
+    const storageKeys = {
+      songbookEdits: "worshipSlides.songbookEdits.v1"
     };
 
     const fontSizing = {
@@ -4564,6 +4707,17 @@ Any use not expressly permitted by this license is prohibited.</pre>
       importList: document.getElementById("importList"),
       cancelImport: document.getElementById("cancelImport"),
       confirmImport: document.getElementById("confirmImport"),
+      openSongbookEditor: document.getElementById("openSongbookEditor"),
+      songbookDialog: document.getElementById("songbookDialog"),
+      songbookTrack: document.getElementById("songbookTrack"),
+      songbookList: document.getElementById("songbookList"),
+      songbookBack: document.getElementById("songbookBack"),
+      songbookEditTitle: document.getElementById("songbookEditTitle"),
+      songbookEditStatus: document.getElementById("songbookEditStatus"),
+      songbookText: document.getElementById("songbookText"),
+      songbookSaveTop: document.getElementById("songbookSaveTop"),
+      songbookSaveBottom: document.getElementById("songbookSaveBottom"),
+      closeSongbookEditor: document.getElementById("closeSongbookEditor"),
       openLicense: document.getElementById("openLicense"),
       licenseDialog: document.getElementById("licenseDialog"),
       closeLicense: document.getElementById("closeLicense"),
@@ -5571,6 +5725,150 @@ Any use not expressly permitted by this license is prohibited.</pre>
       els.openLicense.focus();
     }
 
+    function loadSongbookEdits() {
+      let edits = {};
+      try {
+        edits = JSON.parse(window.localStorage.getItem(storageKeys.songbookEdits) || "{}");
+      } catch {
+        edits = {};
+      }
+
+      songs.forEach(song => {
+        const saved = edits[song.title];
+        if (saved && Array.isArray(saved.sections)) {
+          const sections = normalizeSavedSections(saved.sections);
+          if (sections.length) song.sections = sections;
+        }
+      });
+    }
+
+    function normalizeSavedSections(sections) {
+      return sections
+        .map(section => ({
+          label: String(section.label || "Verse").trim() || "Verse",
+          lines: Array.isArray(section.lines)
+            ? section.lines.map(line => String(line).trim()).filter(Boolean)
+            : []
+        }))
+        .filter(section => section.lines.length);
+    }
+
+    function getStoredSongbookEdits() {
+      try {
+        return JSON.parse(window.localStorage.getItem(storageKeys.songbookEdits) || "{}");
+      } catch {
+        return {};
+      }
+    }
+
+    function storeSongbookEdit(song) {
+      const edits = getStoredSongbookEdits();
+      edits[song.title] = {
+        sections: song.sections,
+        updatedAt: new Date().toISOString()
+      };
+      try {
+        window.localStorage.setItem(storageKeys.songbookEdits, JSON.stringify(edits));
+        return true;
+      } catch {
+        return false;
+      }
+    }
+
+    function openSongbookEditor() {
+      renderSongbookList();
+      showSongbookListView();
+      els.songbookDialog.classList.remove("hidden");
+      els.closeSongbookEditor.focus();
+    }
+
+    function closeSongbookEditor() {
+      els.songbookDialog.classList.add("hidden");
+      showSongbookListView();
+      els.openSongbookEditor.focus();
+    }
+
+    function showSongbookListView() {
+      state.editingSongIndex = null;
+      els.songbookTrack.classList.remove("editing");
+      els.songbookEditStatus.textContent = "";
+    }
+
+    function renderSongbookList() {
+      els.songbookList.textContent = "";
+      getSongMatches("").forEach(({ song, index }) => {
+        const card = document.createElement("button");
+        const title = document.createElement("strong");
+        const meta = document.createElement("span");
+        card.type = "button";
+        card.className = "songbook-card";
+        title.textContent = song.title;
+        meta.textContent = describeSongSections(song);
+        card.append(title, meta);
+        card.addEventListener("click", () => openSongEditor(index));
+        els.songbookList.append(card);
+      });
+    }
+
+    function describeSongSections(song) {
+      const sections = getSongSections(song);
+      const lineCount = sections.reduce((total, section) => total + section.lines.length, 0);
+      return `${sections.length} section${sections.length === 1 ? "" : "s"} · ${lineCount} line${lineCount === 1 ? "" : "s"}`;
+    }
+
+    function openSongEditor(index) {
+      state.editingSongIndex = index;
+      const song = songs[index];
+      els.songbookEditTitle.textContent = song.title;
+      els.songbookEditStatus.textContent = "";
+      els.songbookText.value = serializeSongForEditing(song);
+      els.songbookTrack.classList.add("editing");
+      window.setTimeout(() => els.songbookText.focus(), 220);
+    }
+
+    function serializeSongForEditing(song) {
+      return getSongSections(song)
+        .map(section => section.lines.join("\n"))
+        .join("\n\n");
+    }
+
+    function parseEditedSongText(text) {
+      const originalSections = state.editingSongIndex === null
+        ? []
+        : getSongSections(songs[state.editingSongIndex]);
+
+      return text
+        .split(/\n\s*\n/g)
+        .map((block, index) => ({
+          label: originalSections[index]?.label || `Verse ${index + 1}`,
+          lines: block
+            .split(/\r?\n/)
+            .map(line => line.trim())
+            .filter(Boolean)
+        }))
+        .filter(section => section.lines.length);
+    }
+
+    function saveEditedSong() {
+      if (state.editingSongIndex === null) return;
+      const sections = parseEditedSongText(els.songbookText.value);
+      if (!sections.length) {
+        els.songbookEditStatus.textContent = "Cannot save an empty song.";
+        return;
+      }
+
+      const song = songs[state.editingSongIndex];
+      song.sections = sections;
+      const persisted = storeSongbookEdit(song);
+      renderSongbookList();
+      refreshSongOptions(state.songIndex);
+      if (state.editingSongIndex === state.songIndex) {
+        state.slideIndex = 0;
+        rebuildSlides();
+      }
+      els.songbookEditStatus.textContent = persisted ? "Saved." : "Saved for this session. Browser storage is unavailable.";
+    }
+
     function refreshSongOptions(selectedIndex = state.songIndex) {
       state.songIndex = Math.max(0, Math.min(selectedIndex, songs.length - 1));
       els.songSearch.value = songs[state.songIndex]?.title || "";
@@ -5663,6 +5961,7 @@ Any use not expressly permitted by this license is prohibited.</pre>
     }
 
     function init() {
+      loadSongbookEdits();
       refreshSongOptions();
 
       els.songSearch.addEventListener("focus", () => {
@@ -5714,6 +6013,14 @@ Any use not expressly permitted by this license is prohibited.</pre>
       els.importDialog.addEventListener("click", event => {
         if (event.target === els.importDialog) closeImportPreview();
       });
+      els.openSongbookEditor.addEventListener("click", openSongbookEditor);
+      els.closeSongbookEditor.addEventListener("click", closeSongbookEditor);
+      els.songbookDialog.addEventListener("click", event => {
+        if (event.target === els.songbookDialog) closeSongbookEditor();
+      });
+      els.songbookBack.addEventListener("click", showSongbookListView);
+      els.songbookSaveTop.addEventListener("click", saveEditedSong);
+      els.songbookSaveBottom.addEventListener("click", saveEditedSong);
       els.openLicense.addEventListener("click", openLicenseDialog);
       els.closeLicense.addEventListener("click", closeLicenseDialog);
       els.licenseDialog.addEventListener("click", event => {
@@ -5728,6 +6035,10 @@ Any use not expressly permitted by this license is prohibited.</pre>
       els.nextSlide.addEventListener("click", () => go(1));
 
       window.addEventListener("keydown", event => {
+        if (!els.songbookDialog.classList.contains("hidden")) {
+          if (event.key === "Escape" && event.target !== els.songbookText) closeSongbookEditor();
+          return;
+        }
         if (!els.licenseDialog.classList.contains("hidden")) {
           if (event.key === "Escape") closeLicenseDialog();
           return;
