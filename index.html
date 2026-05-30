@@ -511,6 +511,15 @@
       background: #edf1f3;
     }
 
+    .songbook-card-add {
+      background: #e9f4f0;
+      border-color: rgba(31, 122, 101, 0.35);
+    }
+
+    .songbook-card-add:hover {
+      background: #dceee8;
+    }
+
     .songbook-card strong,
     .songbook-card span {
       display: block;
@@ -547,6 +556,10 @@
       font-size: 1rem;
       line-height: 1.25;
       margin: 0;
+    }
+
+    .song-title-input {
+      margin-top: 8px;
     }
 
     .song-editor {
@@ -742,6 +755,7 @@
               <button id="songbookBack" class="back-button" type="button" aria-label="Back to song list">&#8592;</button>
               <div class="song-editor-title">
                 <h3 id="songbookEditTitle">Song</h3>
+                <input id="songbookTitleInput" class="song-title-input hidden" type="text" placeholder="Song title">
                 <div id="songbookEditStatus" class="editor-status"></div>
               </div>
               <button id="songbookSaveTop" type="button">Save</button>
@@ -4672,11 +4686,13 @@ Any use not expressly permitted by this license is prohibited.</pre>
       slides: [],
       displayWindow: null,
       pendingImport: [],
-      editingSongIndex: null
+      editingSongIndex: null,
+      editingNewSong: false
     };
 
     const storageKeys = {
-      songbookEdits: "worshipSlides.songbookEdits.v1"
+      songbookEdits: "worshipSlides.songbookEdits.v1",
+      customSongs: "worshipSlides.customSongs.v1"
     };
 
     const fontSizing = {
@@ -4713,6 +4729,7 @@ Any use not expressly permitted by this license is prohibited.</pre>
       songbookList: document.getElementById("songbookList"),
       songbookBack: document.getElementById("songbookBack"),
       songbookEditTitle: document.getElementById("songbookEditTitle"),
+      songbookTitleInput: document.getElementById("songbookTitleInput"),
       songbookEditStatus: document.getElementById("songbookEditStatus"),
       songbookText: document.getElementById("songbookText"),
       songbookSaveTop: document.getElementById("songbookSaveTop"),
@@ -5733,6 +5750,22 @@ Any use not expressly permitted by this license is prohibited.</pre>
         edits = {};
       }
 
+      let customSongs = [];
+      try {
+        customSongs = JSON.parse(window.localStorage.getItem(storageKeys.customSongs) || "[]");
+      } catch {
+        customSongs = [];
+      }
+
+      customSongs.forEach(song => {
+        if (song && song.title && Array.isArray(song.sections)) {
+          const sections = normalizeSavedSections(song.sections);
+          if (sections.length && !songs.some(existing => existing.title === song.title)) {
+            songs.push({ title: song.title, author: "Local songbook", sections });
+          }
+        }
+      });
+
       songs.forEach(song => {
         const saved = edits[song.title];
         if (saved && Array.isArray(saved.sections)) {
@@ -5758,6 +5791,28 @@ Any use not expressly permitted by this license is prohibited.</pre>
         return JSON.parse(window.localStorage.getItem(storageKeys.songbookEdits) || "{}");
       } catch {
         return {};
+      }
+    }
+
+    function storeCustomSong(song) {
+      let customSongs = [];
+      try {
+        customSongs = JSON.parse(window.localStorage.getItem(storageKeys.customSongs) || "[]");
+      } catch {
+        customSongs = [];
+      }
+
+      customSongs.push({
+        title: song.title,
+        sections: song.sections,
+        createdAt: new Date().toISOString()
+      });
+
+      try {
+        window.localStorage.setItem(storageKeys.customSongs, JSON.stringify(customSongs));
+        return true;
+      } catch {
+        return false;
       }
     }
 
@@ -5790,12 +5845,14 @@ Any use not expressly permitted by this license is prohibited.</pre>
 
     function showSongbookListView() {
       state.editingSongIndex = null;
+      state.editingNewSong = false;
       els.songbookTrack.classList.remove("editing");
       els.songbookEditStatus.textContent = "";
     }
 
     function renderSongbookList() {
       els.songbookList.textContent = "";
+      els.songbookList.append(createAddSongCard());
       getSongMatches("").forEach(({ song, index }) => {
         const card = document.createElement("button");
         const title = document.createElement("strong");
@@ -5810,6 +5867,19 @@ Any use not expressly permitted by this license is prohibited.</pre>
       });
     }
 
+    function createAddSongCard() {
+      const card = document.createElement("button");
+      const title = document.createElement("strong");
+      const meta = document.createElement("span");
+      card.type = "button";
+      card.className = "songbook-card songbook-card-add";
+      title.textContent = "+ Add new song";
+      meta.textContent = "Create a local song in this browser";
+      card.append(title, meta);
+      card.addEventListener("click", openNewSongEditor);
+      return card;
+    }
+
     function describeSongSections(song) {
       const sections = getSongSections(song);
       const lineCount = sections.reduce((total, section) => total + section.lines.length, 0);
@@ -5818,12 +5888,39 @@ Any use not expressly permitted by this license is prohibited.</pre>
 
     function openSongEditor(index) {
       state.editingSongIndex = index;
+      state.editingNewSong = false;
       const song = songs[index];
       els.songbookEditTitle.textContent = song.title;
+      els.songbookEditTitle.classList.remove("hidden");
+      els.songbookTitleInput.classList.add("hidden");
+      els.songbookTitleInput.value = "";
       els.songbookEditStatus.textContent = "";
       els.songbookText.value = serializeSongForEditing(song);
+      els.songbookText.placeholder = "";
       els.songbookTrack.classList.add("editing");
       window.setTimeout(() => els.songbookText.focus(), 220);
+    }
+
+    function openNewSongEditor() {
+      state.editingSongIndex = null;
+      state.editingNewSong = true;
+      els.songbookEditTitle.textContent = "New song";
+      els.songbookEditTitle.classList.add("hidden");
+      els.songbookTitleInput.classList.remove("hidden");
+      els.songbookTitleInput.value = "";
+      els.songbookEditStatus.textContent = "";
+      els.songbookText.value = "";
+      els.songbookText.placeholder = [
+        "Verse line 1",
+        "Verse line 2",
+        "",
+        "Chorus line 1",
+        "Chorus line 2",
+        "",
+        "Bridge line 1"
+      ].join("\n");
+      els.songbookTrack.classList.add("editing");
+      window.setTimeout(() => els.songbookTitleInput.focus(), 220);
     }
 
     function serializeSongForEditing(song) {
@@ -5850,12 +5947,42 @@ Any use not expressly permitted by this license is prohibited.</pre>
     }
 
     function saveEditedSong() {
-      if (state.editingSongIndex === null) return;
       const sections = parseEditedSongText(els.songbookText.value);
       if (!sections.length) {
         els.songbookEditStatus.textContent = "Cannot save an empty song.";
         return;
       }
+
+      if (state.editingNewSong) {
+        const title = els.songbookTitleInput.value.trim();
+        if (!title) {
+          els.songbookEditStatus.textContent = "Song title is required.";
+          return;
+        }
+
+        if (songs.some(song => normalizeSearch(song.title) === normalizeSearch(title))) {
+          els.songbookEditStatus.textContent = "A song with this title already exists.";
+          return;
+        }
+
+        const song = { title, author: "Local songbook", sections };
+        songs.push(song);
+        const persisted = storeCustomSong(song);
+        state.songIndex = songs.length - 1;
+        state.slideIndex = 0;
+        state.editingSongIndex = state.songIndex;
+        state.editingNewSong = false;
+        els.songbookEditTitle.textContent = song.title;
+        els.songbookEditTitle.classList.remove("hidden");
+        els.songbookTitleInput.classList.add("hidden");
+        renderSongbookList();
+        refreshSongOptions(state.songIndex);
+        rebuildSlides();
+        els.songbookEditStatus.textContent = persisted ? "Saved." : "Saved for this session. Browser storage is unavailable.";
+        return;
+      }
+
+      if (state.editingSongIndex === null) return;
 
       const song = songs[state.editingSongIndex];
       song.sections = sections;
