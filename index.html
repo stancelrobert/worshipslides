@@ -5632,6 +5632,12 @@ Any use not expressly permitted by this license is prohibited.</pre>
       els.songSearch.setAttribute("aria-expanded", "true");
     }
 
+    function showAllSongResults() {
+      renderSongResults("");
+      els.songResults.classList.remove("hidden");
+      els.songSearch.setAttribute("aria-expanded", "true");
+    }
+
     function hideSongResults() {
       els.songResults.classList.add("hidden");
       els.songSearch.setAttribute("aria-expanded", "false");
@@ -5660,7 +5666,7 @@ Any use not expressly permitted by this license is prohibited.</pre>
       refreshSongOptions();
 
       els.songSearch.addEventListener("focus", () => {
-        showSongResults();
+        showAllSongResults();
         els.songSearch.select();
       });
       els.songSearch.addEventListener("input", () => {
