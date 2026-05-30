@@ -748,6 +748,7 @@
         <div id="songbookTrack" class="songbook-track">
           <section class="songbook-panel" aria-label="Song list">
             <p class="hint">Choose a song to edit its lyrics.</p>
+            <input id="songbookFilter" type="text" placeholder="Filter songs">
             <div id="songbookList" class="songbook-list"></div>
           </section>
           <section class="songbook-panel" aria-label="Song editor">
@@ -4726,6 +4727,7 @@ Any use not expressly permitted by this license is prohibited.</pre>
       openSongbookEditor: document.getElementById("openSongbookEditor"),
       songbookDialog: document.getElementById("songbookDialog"),
       songbookTrack: document.getElementById("songbookTrack"),
+      songbookFilter: document.getElementById("songbookFilter"),
       songbookList: document.getElementById("songbookList"),
       songbookBack: document.getElementById("songbookBack"),
       songbookEditTitle: document.getElementById("songbookEditTitle"),
@@ -5831,10 +5833,11 @@ Any use not expressly permitted by this license is prohibited.</pre>
     }
 
     function openSongbookEditor() {
+      els.songbookFilter.value = "";
       renderSongbookList();
       showSongbookListView();
       els.songbookDialog.classList.remove("hidden");
-      els.closeSongbookEditor.focus();
+      els.songbookFilter.focus();
     }
 
     function closeSongbookEditor() {
@@ -5852,8 +5855,18 @@ Any use not expressly permitted by this license is prohibited.</pre>
 
     function renderSongbookList() {
       els.songbookList.textContent = "";
-      els.songbookList.append(createAddSongCard());
-      getSongMatches("").forEach(({ song, index }) => {
+      const query = els.songbookFilter.value;
+      if (!query.trim()) els.songbookList.append(createAddSongCard());
+      const matches = getSongMatches(query);
+      if (!matches.length) {
+        const empty = document.createElement("div");
+        empty.className = "song-result song-result-empty";
+        empty.textContent = "No matching songs";
+        els.songbookList.append(empty);
+        return;
+      }
+
+      matches.forEach(({ song, index }) => {
         const card = document.createElement("button");
         const title = document.createElement("strong");
         const meta = document.createElement("span");
@@ -6146,6 +6159,7 @@ Any use not expressly permitted by this license is prohibited.</pre>
         if (event.target === els.songbookDialog) closeSongbookEditor();
       });
       els.songbookBack.addEventListener("click", showSongbookListView);
+      els.songbookFilter.addEventListener("input", renderSongbookList);
       els.songbookSaveTop.addEventListener("click", saveEditedSong);
       els.songbookSaveBottom.addEventListener("click", saveEditedSong);
       els.openLicense.addEventListener("click", openLicenseDialog);
