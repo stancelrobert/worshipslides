@@ -216,6 +216,31 @@
       text-align: center;
     }
 
+    .license-link {
+      background: transparent;
+      border: 0;
+      color: var(--muted);
+      font-size: inherit;
+      font-weight: 700;
+      min-height: 0;
+      padding: 0;
+      text-decoration: underline;
+    }
+
+    .license-link:hover {
+      background: transparent;
+      color: var(--text);
+    }
+
+    .license-text {
+      color: var(--text);
+      font-family: inherit;
+      font-size: 0.9rem;
+      line-height: 1.55;
+      margin: 0;
+      white-space: pre-wrap;
+    }
+
     .stage {
       display: grid;
       grid-template-rows: auto minmax(0, 1fr);
@@ -551,7 +576,7 @@
         <strong id="slideStatus">0 / 0</strong>
       </div>
 
-      <p class="footer-credit">&copy; Created by MocnoSercownik</p>
+      <p class="footer-credit">&copy; 2026 MocnoSercownik. All rights reserved. <button id="openLicense" class="license-link" type="button">License</button></p>
     </section>
 
     <section class="stage panel" aria-label="Current slide preview">
@@ -590,6 +615,33 @@
       <footer class="dialog-footer">
         <button id="cancelImport" class="secondary" type="button">Cancel</button>
         <button id="confirmImport" type="button">Add songs</button>
+      </footer>
+    </section>
+  </div>
+  <div id="licenseDialog" class="dialog-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="licenseDialogTitle">
+    <section class="dialog">
+      <header>
+        <h2 id="licenseDialogTitle">License</h2>
+      </header>
+      <div class="dialog-body">
+        <pre class="license-text">MocnoSercownik Proprietary Use License
+
+Copyright (c) 2026 MocnoSercownik. All rights reserved.
+
+This software, including its source code, design, text, structure, and presentation logic, is owned by MocnoSercownik.
+
+Permission is granted to use the application only through an official version made available by MocnoSercownik or with explicit written permission from MocnoSercownik.
+
+You may not copy, save for offline redistribution, publish, mirror, sublicense, sell, rent, modify, create derivative works from, reverse engineer, or host this application or any substantial part of it without prior written permission from MocnoSercownik.
+
+Normal temporary browser caching that is necessary to view and use the official application is allowed. This permission does not grant ownership of the software or any right to redistribute or operate a separate copy of it.
+
+The software is provided "as is", without warranty of any kind, express or implied, including but not limited to warranties of merchantability, fitness for a particular purpose, and non-infringement. MocnoSercownik is not liable for any claim, damage, or other liability arising from use of the software.
+
+Any use not expressly permitted by this license is prohibited.</pre>
+      </div>
+      <footer class="dialog-footer">
+        <button id="closeLicense" type="button">Close</button>
       </footer>
     </section>
   </div>
@@ -4512,6 +4564,9 @@
       importList: document.getElementById("importList"),
       cancelImport: document.getElementById("cancelImport"),
       confirmImport: document.getElementById("confirmImport"),
+      openLicense: document.getElementById("openLicense"),
+      licenseDialog: document.getElementById("licenseDialog"),
+      closeLicense: document.getElementById("closeLicense"),
       autoFit: document.getElementById("autoFit"),
       fontSize: document.getElementById("fontSize"),
       fontSizeNumber: document.getElementById("fontSizeNumber"),
@@ -5506,6 +5561,16 @@
       setImportStatus(`Added ${addedCount} imported song${addedCount === 1 ? "" : "s"}.`);
     }
 
+    function openLicenseDialog() {
+      els.licenseDialog.classList.remove("hidden");
+      els.closeLicense.focus();
+    }
+
+    function closeLicenseDialog() {
+      els.licenseDialog.classList.add("hidden");
+      els.openLicense.focus();
+    }
+
     function refreshSongOptions(selectedIndex = state.songIndex) {
       state.songIndex = Math.max(0, Math.min(selectedIndex, songs.length - 1));
       els.songSearch.value = songs[state.songIndex]?.title || "";
@@ -5643,6 +5708,11 @@
       els.importDialog.addEventListener("click", event => {
         if (event.target === els.importDialog) closeImportPreview();
       });
+      els.openLicense.addEventListener("click", openLicenseDialog);
+      els.closeLicense.addEventListener("click", closeLicenseDialog);
+      els.licenseDialog.addEventListener("click", event => {
+        if (event.target === els.licenseDialog) closeLicenseDialog();
+      });
       els.autoFit.addEventListener("change", event => setAutoFit(event.target.checked));
       els.fontSize.addEventListener("input", event => setManualFontSize(event.target.value));
       els.fontSizeNumber.addEventListener("change", event => setManualFontSize(event.target.value));
@@ -5652,6 +5722,10 @@
       els.nextSlide.addEventListener("click", () => go(1));
 
       window.addEventListener("keydown", event => {
+        if (!els.licenseDialog.classList.contains("hidden")) {
+          if (event.key === "Escape") closeLicenseDialog();
+          return;
+        }
         if (!els.importDialog.classList.contains("hidden")) {
           if (event.key === "Escape") closeImportPreview();
           return;
