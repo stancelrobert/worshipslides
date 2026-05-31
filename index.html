@@ -194,6 +194,123 @@
     .secondary { background: white; border-color: var(--line); color: var(--text); }
     .secondary:hover { background: #edf1f3; }
 
+    body.welcome-active .shell {
+      pointer-events: none;
+      user-select: none;
+    }
+
+    .welcome {
+      align-items: center;
+      background: #10181b;
+      color: white;
+      display: grid;
+      inset: 0;
+      overflow: auto;
+      padding: 4dvh 4vw;
+      position: fixed;
+      z-index: 30;
+    }
+
+    .welcome-scene {
+      inset: 0;
+      opacity: 0.32;
+      position: absolute;
+    }
+
+    .welcome-slide {
+      aspect-ratio: 16 / 9;
+      background: #050505;
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      border-radius: 8px;
+      box-shadow: 0 30px 80px rgba(0, 0, 0, 0.42);
+      color: rgba(255, 255, 255, 0.62);
+      display: grid;
+      font-size: clamp(1rem, 3.4cqw, 2.3rem);
+      font-weight: 800;
+      line-height: 1.12;
+      min-height: 0;
+      overflow: hidden;
+      padding: 5%;
+      place-items: center;
+      position: absolute;
+      text-align: center;
+      white-space: pre-line;
+      width: min(56vw, 760px);
+      container-type: inline-size;
+    }
+
+    .welcome-slide span {
+      display: block;
+      max-width: 100%;
+    }
+
+    .welcome-slide:first-child {
+      right: 5vw;
+      top: 7vh;
+      transform: rotate(2deg);
+    }
+
+    .welcome-slide:last-child {
+      bottom: 7vh;
+      right: 18vw;
+      transform: rotate(-4deg);
+      width: min(44vw, 600px);
+    }
+
+    .welcome-content {
+      display: flex;
+      flex-direction: column;
+      gap: 2.4dvh;
+      height: 90dvh;
+      justify-content: center;
+      max-width: 60vw;
+      position: relative;
+      z-index: 1;
+    }
+
+    .welcome-kicker {
+      color: rgba(255, 255, 255, 0.72);
+      font-size: min(1.55vw, 2.8dvh);
+      font-weight: 800;
+      letter-spacing: 0.12em;
+      margin: 0;
+      text-transform: uppercase;
+    }
+
+    .welcome h1 {
+      font-size: min(8.4vw, 12dvh);
+      line-height: 0.95;
+      margin: 0;
+      max-width: 60vw;
+    }
+
+    .welcome-copy {
+      color: rgba(255, 255, 255, 0.82);
+      font-size: min(2.15vw, 2.9dvh);
+      line-height: 1.35;
+      margin: 0;
+      max-width: 52vw;
+    }
+
+    .welcome-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1.4dvh;
+      margin-top: 0;
+    }
+
+    .welcome-start {
+      background: white;
+      color: #10181b;
+      font-size: min(1.95vw, 3dvh);
+      min-height: 7.4dvh;
+      padding: 0 2.6vw;
+    }
+
+    .welcome-start:hover {
+      background: #edf1f3;
+    }
+
     .import-actions {
       display: grid;
       grid-template-columns: 1fr;
@@ -636,10 +753,62 @@
         flex-direction: column;
       }
       .dialog-footer { flex-direction: column-reverse; }
+      .welcome {
+        align-items: end;
+        padding: 3dvh 5vw;
+      }
+      .welcome-content,
+      .welcome h1,
+      .welcome-copy {
+        max-width: 90vw;
+      }
+      .welcome-slide:first-child {
+        right: -22vw;
+        top: 8vh;
+        width: 92vw;
+      }
+      .welcome-slide:last-child {
+        bottom: 38vh;
+        right: 20vw;
+        width: 70vw;
+      }
+      .welcome h1 {
+        font-size: min(11vw, 9dvh);
+      }
+      .welcome-copy {
+        font-size: min(4.8vw, 2.7dvh);
+        line-height: 1.28;
+        margin-top: 1.2dvh;
+      }
+      .welcome-actions {
+        margin-top: 1.6dvh;
+      }
+      .welcome-start {
+        font-size: min(5.3vw, 2.9dvh);
+        min-height: 6.8dvh;
+      }
     }
   </style>
 </head>
-<body>
+<body class="welcome-active">
+  <section id="welcomePage" class="welcome" aria-label="Welcome">
+    <div class="welcome-scene" aria-hidden="true">
+      <div class="welcome-slide"><span>Tak jak Duch się poruszał
+Ponad wodami
+Panie, poruszaj się tu</span></div>
+      <div class="welcome-slide"><span>Pieśń aniołów brzmi, Święty!
+Wszystko śpiewa Ci, Święty!</span></div>
+    </div>
+    <div class="welcome-content">
+      <p class="welcome-kicker">MocnoSercownik</p>
+      <h1>Worship slides without the weekly slide prep.</h1>
+      <p class="welcome-copy">Imagine not having to prepare slides before every worship night. Setting font size, centering, splitting lyrics between pages... and then remembering the order of your songs during the event.</p>
+      <p class="welcome-copy">All of this trouble is gone now. Choose a song, open the audience display, and keep the lyrics ready when the room starts singing.</p>
+      <div class="welcome-actions">
+        <button id="startApp" class="welcome-start" type="button">Start now</button>
+      </div>
+    </div>
+  </section>
   <main class="shell">
     <section class="controls panel" aria-label="Presenter controls">
       <div class="brand">
@@ -5762,6 +5931,8 @@ Any use not expressly permitted by this license is prohibited.</pre>
     };
 
     const els = {
+      welcomePage: document.getElementById("welcomePage"),
+      startApp: document.getElementById("startApp"),
       songSearch: document.getElementById("songSearch"),
       songResults: document.getElementById("songResults"),
       importPdf: document.getElementById("importPdf"),
@@ -7064,6 +7235,14 @@ Any use not expressly permitted by this license is prohibited.</pre>
       hideSongResults();
     }
 
+    function startApp() {
+      document.body.classList.remove("welcome-active");
+      els.welcomePage.classList.add("hidden");
+      updatePreviewScale();
+      updateGalleryScale();
+      els.songSearch.focus();
+    }
+
     function normalizeSearch(text) {
       return text
         .normalize("NFD")
@@ -7152,6 +7331,7 @@ Any use not expressly permitted by this license is prohibited.</pre>
       loadSongbookEdits();
       refreshSongOptions();
 
+      els.startApp.addEventListener("click", startApp);
       els.songSearch.addEventListener("focus", () => {
         showAllSongResults();
         els.songSearch.select();
