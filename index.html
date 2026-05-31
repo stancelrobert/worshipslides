@@ -311,6 +311,39 @@
       background: #edf1f3;
     }
 
+    .language-switcher {
+      display: flex;
+      gap: 8px;
+      position: fixed;
+      right: 18px;
+      top: 18px;
+      z-index: 40;
+    }
+
+    .language-button {
+      align-items: center;
+      background: transparent;
+      border: 0;
+      border-radius: 4px;
+      box-shadow: none;
+      color: var(--text);
+      display: inline-flex;
+      font-size: 1.3rem;
+      height: 34px;
+      justify-content: center;
+      min-height: 34px;
+      padding: 0;
+      width: 36px;
+    }
+
+    .language-button:hover {
+      background: rgba(255, 255, 255, 0.18);
+    }
+
+    .language-button[aria-pressed="true"] {
+      box-shadow: inset 0 -2px 0 currentColor;
+    }
+
     .import-actions {
       display: grid;
       grid-template-columns: 1fr;
@@ -320,9 +353,9 @@
     .status {
       border-top: 1px solid var(--line);
       color: var(--muted);
-      display: flex;
-      justify-content: space-between;
+      display: grid;
       gap: 16px;
+      grid-template-columns: 1fr auto;
       padding-top: 16px;
     }
 
@@ -791,6 +824,10 @@
   </style>
 </head>
 <body class="welcome-active">
+  <div class="language-switcher" aria-label="Language">
+    <button id="languagePl" class="language-button" type="button" aria-label="Polski" aria-pressed="false">🇵🇱</button>
+    <button id="languageEn" class="language-button" type="button" aria-label="English" aria-pressed="false">🇬🇧</button>
+  </div>
   <section id="welcomePage" class="welcome" aria-label="Welcome">
     <div class="welcome-scene" aria-hidden="true">
       <div class="welcome-slide"><span>Tak jak Duch się poruszał
@@ -5905,12 +5942,14 @@ Any use not expressly permitted by this license is prohibited.</pre>
       displayWindow: null,
       pendingImport: [],
       editingSongIndex: null,
-      editingNewSong: false
+      editingNewSong: false,
+      currentLanguage: "pl"
     };
 
     const storageKeys = {
       songbookEdits: "worshipSlides.songbookEdits.v1",
-      customSongs: "worshipSlides.customSongs.v1"
+      customSongs: "worshipSlides.customSongs.v1",
+      language: "worshipSlides.language.v1"
     };
 
     const fontSizing = {
@@ -5930,7 +5969,204 @@ Any use not expressly permitted by this license is prohibited.</pre>
       worker: "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js"
     };
 
+    const translations = {
+      pl: {
+        documentTitle: "Slajdy Uwielbienia",
+        languageLabel: "Język",
+        welcomeAria: "Strona powitalna",
+        presenterControls: "Kontrolki prezentera",
+        previewAria: "Podgląd bieżącego slajdu",
+        slideGalleryAria: "Galeria slajdów",
+        fontSizePixels: "Rozmiar czcionki w pikselach",
+        welcomeTitle: "Zapomnij o układaniu slajdów przed każdym uwielbieniem.",
+        welcomeCopy1: "Ustawianie rozmiaru czcionki, centrowanie, dzielenie tekstu między strony... a potem pamiętanie kolejności pieśni podczas wydarzenia.",
+        welcomeCopy2: "To już przeszłość. Wybierz pieśń, otwórz ekran dla uczestników i pozwól sobie skupić się na modlitwie!",
+        startNow: "Lecimy!",
+        appTitle: "Slajdy Uwielbienia",
+        appIntro: "Wybierz pieśń, otwórz ekran dla projektora i wyświetl tekst uczestnikom.",
+        song: "Pieśń",
+        editSongbook: "Edytuj śpiewnik",
+        import: "Import",
+        importPdf: "Importuj PDF",
+        importing: "Importuję...",
+        importStatusIdle: "Zaimportowane pieśni są dostępne do zamknięcia tej strony.",
+        currentSlideFontSize: "Rozmiar czcionki bieżącego slajdu",
+        autoFitCurrentSlide: "Automatycznie dopasuj bieżący slajd",
+        openAudienceDisplay: "Otwórz ekran dla uczestników",
+        navigation: "Nawigacja",
+        previous: "Poprzedni",
+        next: "Następny",
+        blank: "Pusty slajd",
+        showLyrics: "Pokaż tekst",
+        tip: "Wskazówka: po otwarciu ekranu dla uczestników przeciągnij go na ekran zewnętrzny i użyj pełnego ekranu w przeglądarce.",
+        displayClosed: "Ekran zamknięty",
+        displayOpen: "Ekran otwarty",
+        popupBlocked: "Popup zablokowany",
+        allRights: "Wszelkie prawa zastrzeżone.",
+        license: "Licencja",
+        noSongSelected: "Nie wybrano pieśni",
+        waitingForLyrics: "Oczekiwanie na tekst",
+        selectSongToStart: "Wybierz pieśń, aby zacząć.",
+        noLyricsOnSlide: "Brak tekstu na tym slajdzie.",
+        slides: "Slajdy",
+        reviewPdfImport: "Sprawdź import PDF",
+        cancel: "Anuluj",
+        close: "Zamknij",
+        addSongs: "Dodaj pieśni",
+        editSongbookTitle: "Edytuj śpiewnik",
+        chooseSongToEdit: "Wybierz pieśń, aby edytować jej tekst.",
+        songList: "Lista pieśni",
+        songEditor: "Edytor pieśni",
+        filterSongs: "Filtruj pieśni",
+        backToSongList: "Wróć do listy pieśni",
+        songTitlePlaceholder: "Tytuł pieśni",
+        save: "Zapisz",
+        newSong: "Nowa pieśń",
+        newSongPlaceholder: "Linia zwrotki 1\nLinia zwrotki 2\n\nLinia refrenu 1\nLinia refrenu 2\n\nLinia mostu 1",
+        addNewSong: "+ Dodaj nową pieśń",
+        createLocalSong: "Utwórz lokalną pieśń w tej przeglądarce",
+        noMatchingSongs: "Brak pasujących pieśni",
+        localSongbook: "Lokalny śpiewnik",
+        songTitleRequired: "Tytuł pieśni jest wymagany.",
+        songAlreadyExists: "Pieśń o takim tytule już istnieje.",
+        emptySongError: "Nie można zapisać pustej pieśni.",
+        saved: "Zapisano.",
+        savedSessionOnly: "Zapisano na czas tej sesji. Pamięć przeglądarki jest niedostępna.",
+        emptySlide: "Pusty slajd",
+        slideAria: "Przejdź do slajdu {number}",
+        splitStatus: "{count} slajd{suffix} - auto {size}px",
+        splitSuffixOne: "",
+        splitSuffixMany: "ów",
+        importFound: "{fileName}: znaleziono {songCount} pieś{songSuffix} i {sectionCount} sekcj{sectionSuffix}. Sprawdź wykrytą strukturę przed dodaniem.",
+        importSongOne: "ń",
+        importSongMany: "ni",
+        importSectionOne: "ę",
+        importSectionMany: "i",
+        pdfParsed: "PDF odczytany. Potwierdź podgląd, aby dodać pieśni.",
+        readingPdf: "Odczytywanie {fileName}...",
+        parsingPdf: "Parsowanie {fileName}...",
+        detectingSongs: "Wykrywanie pieśni w {fileName}...",
+        pdfJsFailed: "PDF.js załadował się, ale się nie uruchomił.",
+        pdfJsLoadFailed: "Nie udało się załadować PDF.js. Sprawdź połączenie z internetem.",
+        couldNotImportPdf: "Nie udało się zaimportować tego PDF.",
+        noSongsDetected: "{fileName}: żadna pieśń nie pasuje do obecnych reguł importera. PDF.js odczytał {lineCount} lini{lineSuffix} tekstu z {pageCount} stron{pageSuffix}.",
+        textLineOne: "ę",
+        textLineMany: "i",
+        pageSuffixOne: "y",
+        pageSuffixMany: "",
+        noTextExtracted: "Nie odczytano żadnych linii tekstu. Ten plik może być skanem/obrazem lub wymagać OCR.",
+        pageMeta: "Strona {page}, y {y}, czcionka {fontSize}",
+        pdfTextNoSongs: "Tekst PDF został odczytany, ale nie wykryto pieśni. Sprawdź próbkę surowych linii.",
+        addedImportedSongs: "Dodano {count} zaimportowan{suffix} pieś{songSuffix}.",
+        addedImportedSuffixOne: "ą",
+        addedImportedSuffixMany: "e",
+        sectionCount: "{sectionCount} sekcj{sectionSuffix} · {lineCount} lini{lineSuffix}",
+        sectionOne: "a",
+        sectionMany: "i",
+        lineOne: "a",
+        lineMany: "i"
+      },
+      en: {
+        documentTitle: "Worship Slides",
+        languageLabel: "Language",
+        welcomeAria: "Welcome",
+        presenterControls: "Presenter controls",
+        previewAria: "Current slide preview",
+        slideGalleryAria: "Slide gallery",
+        fontSizePixels: "Font size in pixels",
+        welcomeTitle: "Worship slides without the weekly slide prep.",
+        welcomeCopy1: "Imagine not having to prepare slides before every worship night. Setting font size, centering, splitting lyrics between pages... and then remembering the order of your songs during the event.",
+        welcomeCopy2: "All of this trouble is gone now. Choose a song, open the audience display, and keep the lyrics ready when the room starts singing.",
+        startNow: "Start now",
+        appTitle: "Worship Slides",
+        appIntro: "Choose a song, set the size, and send lyrics to the projector window.",
+        song: "Song",
+        editSongbook: "Edit songbook",
+        import: "Import",
+        importPdf: "Import PDF",
+        importing: "Importing...",
+        importStatusIdle: "Imported songs are available until this page is closed.",
+        currentSlideFontSize: "Current slide font size",
+        autoFitCurrentSlide: "Auto fit current slide",
+        openAudienceDisplay: "Open audience display",
+        navigation: "Navigation",
+        previous: "Previous",
+        next: "Next",
+        blank: "Blank",
+        showLyrics: "Show lyrics",
+        tip: "Tip: after opening the audience display, drag it to the external screen and use the browser fullscreen command.",
+        displayClosed: "Display closed",
+        displayOpen: "Display open",
+        popupBlocked: "Popup blocked",
+        allRights: "All rights reserved.",
+        license: "License",
+        noSongSelected: "No song selected",
+        waitingForLyrics: "Waiting for lyrics",
+        selectSongToStart: "Select a song to start.",
+        noLyricsOnSlide: "No lyrics on this slide.",
+        slides: "Slides",
+        reviewPdfImport: "Review PDF import",
+        cancel: "Cancel",
+        close: "Close",
+        addSongs: "Add songs",
+        editSongbookTitle: "Edit songbook",
+        chooseSongToEdit: "Choose a song to edit its lyrics.",
+        songList: "Song list",
+        songEditor: "Song editor",
+        filterSongs: "Filter songs",
+        backToSongList: "Back to song list",
+        songTitlePlaceholder: "Song title",
+        save: "Save",
+        newSong: "New song",
+        newSongPlaceholder: "Verse line 1\nVerse line 2\n\nChorus line 1\nChorus line 2\n\nBridge line 1",
+        addNewSong: "+ Add new song",
+        createLocalSong: "Create a local song in this browser",
+        noMatchingSongs: "No matching songs",
+        localSongbook: "Local songbook",
+        songTitleRequired: "Song title is required.",
+        songAlreadyExists: "A song with this title already exists.",
+        emptySongError: "Cannot save an empty song.",
+        saved: "Saved.",
+        savedSessionOnly: "Saved for this session. Browser storage is unavailable.",
+        emptySlide: "Empty slide",
+        slideAria: "Go to slide {number}",
+        splitStatus: "{count} slide{suffix} - auto {size}px",
+        splitSuffixOne: "",
+        splitSuffixMany: "s",
+        importFound: "{fileName}: found {songCount} song{songSuffix} and {sectionCount} section{sectionSuffix}. Review the detected structure before adding.",
+        importSongOne: "",
+        importSongMany: "s",
+        importSectionOne: "",
+        importSectionMany: "s",
+        pdfParsed: "PDF parsed. Confirm the preview to add songs.",
+        readingPdf: "Reading {fileName}...",
+        parsingPdf: "Parsing {fileName}...",
+        detectingSongs: "Detecting songs in {fileName}...",
+        pdfJsFailed: "PDF.js loaded but did not initialize.",
+        pdfJsLoadFailed: "Could not load PDF.js. Check your internet connection.",
+        couldNotImportPdf: "Could not import this PDF.",
+        noSongsDetected: "{fileName}: no songs matched the current importer rules. PDF.js extracted {lineCount} text line{lineSuffix} from {pageCount} page{pageSuffix}.",
+        textLineOne: "",
+        textLineMany: "s",
+        pageSuffixOne: "",
+        pageSuffixMany: "s",
+        noTextExtracted: "No text lines were extracted. This file may be scanned/image-based or may require OCR.",
+        pageMeta: "Page {page}, y {y}, font {fontSize}",
+        pdfTextNoSongs: "PDF text extracted, but no songs were detected. Review the raw line sample.",
+        addedImportedSongs: "Added {count} imported song{songSuffix}.",
+        addedImportedSuffixOne: "",
+        addedImportedSuffixMany: "",
+        sectionCount: "{sectionCount} section{sectionSuffix} · {lineCount} line{lineSuffix}",
+        sectionOne: "",
+        sectionMany: "s",
+        lineOne: "",
+        lineMany: "s"
+      }
+    };
+
     const els = {
+      languagePl: document.getElementById("languagePl"),
+      languageEn: document.getElementById("languageEn"),
       welcomePage: document.getElementById("welcomePage"),
       startApp: document.getElementById("startApp"),
       songSearch: document.getElementById("songSearch"),
@@ -5977,13 +6213,138 @@ Any use not expressly permitted by this license is prohibited.</pre>
       slideGallery: document.getElementById("slideGallery")
     };
 
+    function t(key, params = {}) {
+      const template = translations[state.currentLanguage]?.[key] ?? translations.pl[key] ?? key;
+      return Object.entries(params).reduce((text, [name, value]) => (
+        text.replaceAll(`{${name}}`, String(value))
+      ), template);
+    }
+
+    function getPluralKey(count, oneKey, manyKey) {
+      return count === 1 ? t(oneKey) : t(manyKey);
+    }
+
+    function detectInitialLanguage() {
+      let saved = "";
+      try {
+        saved = window.localStorage.getItem(storageKeys.language) || "";
+      } catch {
+        saved = "";
+      }
+      if (saved === "pl" || saved === "en") return saved;
+
+      const languages = Array.isArray(navigator.languages) && navigator.languages.length
+        ? navigator.languages
+        : [navigator.language].filter(Boolean);
+      const firstSupported = languages
+        .map(language => String(language).toLowerCase())
+        .find(language => language.startsWith("pl") || language.startsWith("en"));
+      if (firstSupported?.startsWith("en")) return "en";
+      return "pl";
+    }
+
+    function setText(selector, value) {
+      const element = document.querySelector(selector);
+      if (element) element.textContent = value;
+    }
+
+    function setLanguage(language, persist = true) {
+      state.currentLanguage = language === "en" ? "en" : "pl";
+      if (persist) {
+        try {
+          window.localStorage.setItem(storageKeys.language, state.currentLanguage);
+        } catch {
+          // Ignore unavailable browser storage.
+        }
+      }
+      applyLanguage();
+    }
+
+    function applyLanguage() {
+      document.documentElement.lang = state.currentLanguage;
+      document.title = t("documentTitle");
+      document.querySelector(".language-switcher")?.setAttribute("aria-label", t("languageLabel"));
+      els.welcomePage.setAttribute("aria-label", t("welcomeAria"));
+      document.querySelector(".controls")?.setAttribute("aria-label", t("presenterControls"));
+      els.languagePl.setAttribute("aria-pressed", String(state.currentLanguage === "pl"));
+      els.languageEn.setAttribute("aria-pressed", String(state.currentLanguage === "en"));
+
+      const welcomeCopies = document.querySelectorAll(".welcome-copy");
+      setText(".welcome h1", t("welcomeTitle"));
+      if (welcomeCopies[0]) welcomeCopies[0].textContent = t("welcomeCopy1");
+      if (welcomeCopies[1]) welcomeCopies[1].textContent = t("welcomeCopy2");
+      els.startApp.textContent = t("startNow");
+
+      setText(".brand h1", t("appTitle"));
+      setText(".brand p", t("appIntro"));
+      setText('label[for="songSearch"]', t("song"));
+      els.openSongbookEditor.textContent = t("editSongbook");
+      setText(".field.hidden .section-label", t("import"));
+      els.importPdf.textContent = els.importPdf.classList.contains("busy") ? t("importing") : t("importPdf");
+      if (els.importStatus.textContent === translations.pl.importStatusIdle || els.importStatus.textContent === translations.en.importStatusIdle) {
+        els.importStatus.textContent = t("importStatusIdle");
+      }
+      setText('label[for="fontSize"]', t("currentSlideFontSize"));
+      setText(".toggle-row span", t("autoFitCurrentSlide"));
+      els.fontSizeNumber.setAttribute("aria-label", t("fontSizePixels"));
+      els.openDisplay.textContent = t("openAudienceDisplay");
+      setText(".field:not(.hidden) .section-label", t("navigation"));
+      els.prevSlide.textContent = t("previous");
+      els.nextSlide.textContent = t("next");
+      setText(".controls > .hint", t("tip"));
+      els.openLicense.textContent = t("license");
+      document.querySelector(".footer-credit").replaceChildren(
+        document.createTextNode(`© 2026 MocnoSercownik. ${t("allRights")} `),
+        els.openLicense
+      );
+
+      document.querySelector(".stage")?.setAttribute("aria-label", t("previewAria"));
+      document.querySelector(".slide-gallery")?.setAttribute("aria-label", t("slideGalleryAria"));
+      setText(".slide-gallery-header", t("slides"));
+      if (els.songTitle.textContent === translations.pl.noSongSelected || els.songTitle.textContent === translations.en.noSongSelected) {
+        els.songTitle.textContent = t("noSongSelected");
+      }
+      if (els.splitStatus.textContent === translations.pl.waitingForLyrics || els.splitStatus.textContent === translations.en.waitingForLyrics) {
+        els.splitStatus.textContent = t("waitingForLyrics");
+      }
+      if (els.previewText.textContent === translations.pl.selectSongToStart || els.previewText.textContent === translations.en.selectSongToStart) {
+        els.previewText.textContent = t("selectSongToStart");
+      }
+
+      setText("#importDialogTitle", t("reviewPdfImport"));
+      els.cancelImport.textContent = els.cancelImport.textContent === translations.pl.close || els.cancelImport.textContent === translations.en.close ? t("close") : t("cancel");
+      els.confirmImport.textContent = t("addSongs");
+      setText("#songbookDialogTitle", t("editSongbookTitle"));
+      const songbookPanels = document.querySelectorAll(".songbook-panel");
+      songbookPanels[0]?.setAttribute("aria-label", t("songList"));
+      songbookPanels[1]?.setAttribute("aria-label", t("songEditor"));
+      setText(".songbook-panel .hint", t("chooseSongToEdit"));
+      els.songbookFilter.placeholder = t("filterSongs");
+      els.songbookBack.setAttribute("aria-label", t("backToSongList"));
+      els.songbookTitleInput.placeholder = t("songTitlePlaceholder");
+      if (state.editingNewSong) {
+        els.songbookText.placeholder = t("newSongPlaceholder");
+        els.songbookEditTitle.textContent = t("newSong");
+      }
+      els.songbookSaveTop.textContent = t("save");
+      els.songbookSaveBottom.textContent = t("save");
+      els.closeSongbookEditor.textContent = t("close");
+      setText("#licenseDialogTitle", t("license"));
+      els.closeLicense.textContent = t("close");
+      const displayDoc = getDisplayDocument();
+      if (displayDoc) displayDoc.title = t("openAudienceDisplay");
+
+      renderSongbookList();
+      render();
+    }
+
     function projectionHtml() {
       return `<!doctype html>
 <html lang="en">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Audience Display</title>
+  <title>${t("openAudienceDisplay")}</title>
   <style>
     * { box-sizing: border-box; }
     html, body { width: 100%; height: 100%; margin: 0; background: #000; overflow: hidden; }
@@ -6030,7 +6391,7 @@ Any use not expressly permitted by this license is prohibited.</pre>
       if (!state.displayWindow || state.displayWindow.closed) {
         state.displayWindow = window.open("", "worshipSlidesDisplay", "popup=yes,width=1280,height=720");
         if (!state.displayWindow) {
-          els.displayStatus.textContent = "Popup blocked";
+          els.displayStatus.textContent = t("popupBlocked");
           return;
         }
         state.displayWindow.document.open();
@@ -6064,13 +6425,13 @@ Any use not expressly permitted by this license is prohibited.</pre>
           script.src = pdfJsConfig.script;
           script.onload = () => {
             if (!window.pdfjsLib) {
-              reject(new Error("PDF.js loaded but did not initialize."));
+              reject(new Error(t("pdfJsFailed")));
               return;
             }
             window.pdfjsLib.GlobalWorkerOptions.workerSrc = pdfJsConfig.worker;
             resolve(window.pdfjsLib);
           };
-          script.onerror = () => reject(new Error("Could not load PDF.js. Check your internet connection."));
+          script.onerror = () => reject(new Error(t("pdfJsLoadFailed")));
           document.head.append(script);
         });
       }
@@ -6082,14 +6443,14 @@ Any use not expressly permitted by this license is prohibited.</pre>
       if (!file) return;
 
       setImportBusy(true);
-      setImportStatus(`Reading ${file.name}...`);
+      setImportStatus(t("readingPdf", { fileName: file.name }));
 
       try {
         const pdfjsLib = await loadPdfJs();
         const data = await file.arrayBuffer();
-        setImportStatus(`Parsing ${file.name}...`);
+        setImportStatus(t("parsingPdf", { fileName: file.name }));
         const pdf = await pdfjsLib.getDocument({ data }).promise;
-        setImportStatus(`Detecting songs in ${file.name}...`);
+        setImportStatus(t("detectingSongs", { fileName: file.name }));
         const lines = await extractPdfLines(pdf);
         const importedSongs = detectSongsFromLines(lines, file.name);
 
@@ -6101,7 +6462,7 @@ Any use not expressly permitted by this license is prohibited.</pre>
         state.pendingImport = importedSongs;
         renderImportPreview(importedSongs, file.name);
       } catch (error) {
-        setImportStatus(error.message || "Could not import this PDF.");
+        setImportStatus(error.message || t("couldNotImportPdf"));
       } finally {
         setImportBusy(false);
         els.pdfFile.value = "";
@@ -6504,25 +6865,31 @@ Any use not expressly permitted by this license is prohibited.</pre>
       const slide = state.isBlank ? "" : formatSlideText(activeSlide, displayFontSize);
       syncPreviewLayout();
       els.songTitle.textContent = song.title;
-      els.songMeta.textContent = song.author;
-      els.previewText.textContent = state.isBlank ? "" : (slide || "No lyrics on this slide.");
+      els.songMeta.textContent = [translations.pl.localSongbook, translations.en.localSongbook].includes(song.author)
+        ? t("localSongbook")
+        : song.author;
+      els.previewText.textContent = state.isBlank ? "" : (slide || t("noLyricsOnSlide"));
       els.previewText.classList.toggle("empty", !slide);
       els.previewSlide.style.fontSize = `${displayFontSize}px`;
       updatePreviewScale();
       syncFontControls(displayFontSize);
       els.slideStatus.textContent = `${state.slideIndex + 1} / ${state.slides.length}`;
-      els.splitStatus.textContent = `${state.slides.length} slide${state.slides.length === 1 ? "" : "s"} - auto ${displayFontSize}px`;
+      els.splitStatus.textContent = t("splitStatus", {
+        count: state.slides.length,
+        suffix: getPluralKey(state.slides.length, "splitSuffixOne", "splitSuffixMany"),
+        size: displayFontSize
+      });
       els.prevSlide.disabled = state.slideIndex === 0;
       els.nextSlide.disabled = state.slideIndex >= state.slides.length - 1;
       els.blankSlide.setAttribute("aria-pressed", String(state.isBlank));
-      els.blankSlide.textContent = state.isBlank ? "Show lyrics" : "Blank";
+      els.blankSlide.textContent = state.isBlank ? t("showLyrics") : t("blank");
       updateGallerySelection();
       renderDisplay(activeSlide, displayFontSize);
     }
 
     function renderDisplay(slide, fontSize = getDisplayFontSize(slide, state.slideIndex)) {
       const displayDoc = getDisplayDocument();
-      els.displayStatus.textContent = displayDoc ? "Display open" : "Display closed";
+      els.displayStatus.textContent = displayDoc ? t("displayOpen") : t("displayClosed");
       if (!displayDoc) return;
       const slideEl = displayDoc.getElementById("slide");
       slideEl.textContent = formatSlideText(slide, fontSize);
@@ -6550,7 +6917,7 @@ Any use not expressly permitted by this license is prohibited.</pre>
         button.type = "button";
         button.className = "slide-thumb";
         button.dataset.slideIndex = String(index);
-        button.setAttribute("aria-label", `Go to slide ${index + 1}`);
+        button.setAttribute("aria-label", t("slideAria", { number: index + 1 }));
 
         label.className = "slide-thumb-label";
         label.textContent = getSlideThumbnailTitle(slide);
@@ -6589,7 +6956,7 @@ Any use not expressly permitted by this license is prohibited.</pre>
       }
 
       title = title.replace(/[^\p{L}\p{N}]+$/gu, "");
-      return `${title || "Empty slide"}...`;
+      return `${title || t("emptySlide")}...`;
     }
 
     function goToSlide(index) {
@@ -6871,14 +7238,20 @@ Any use not expressly permitted by this license is prohibited.</pre>
     function setImportBusy(isBusy) {
       els.importPdf.disabled = isBusy;
       els.importPdf.classList.toggle("busy", isBusy);
-      els.importPdf.textContent = isBusy ? "Importing..." : "Import PDF";
+      els.importPdf.textContent = isBusy ? t("importing") : t("importPdf");
       els.importPdf.setAttribute("aria-busy", String(isBusy));
     }
 
     function renderImportPreview(importedSongs, fileName) {
       const sectionCount = importedSongs.reduce((total, song) => total + song.sections.length, 0);
       state.pendingImport = importedSongs;
-      els.importSummary.textContent = `${fileName}: found ${importedSongs.length} song${importedSongs.length === 1 ? "" : "s"} and ${sectionCount} section${sectionCount === 1 ? "" : "s"}. Review the detected structure before adding.`;
+      els.importSummary.textContent = t("importFound", {
+        fileName,
+        songCount: importedSongs.length,
+        songSuffix: getPluralKey(importedSongs.length, "importSongOne", "importSongMany"),
+        sectionCount,
+        sectionSuffix: getPluralKey(sectionCount, "importSectionOne", "importSectionMany")
+      });
       els.importList.textContent = "";
 
       importedSongs.forEach(song => {
@@ -6894,19 +7267,25 @@ Any use not expressly permitted by this license is prohibited.</pre>
 
       els.importDialog.classList.remove("hidden");
       els.confirmImport.focus();
-      setImportStatus("PDF parsed. Confirm the preview to add songs.");
+      setImportStatus(t("pdfParsed"));
     }
 
     function renderImportDebug(lines, fileName, pageCount) {
       state.pendingImport = [];
-      els.importSummary.textContent = `${fileName}: no songs matched the current importer rules. PDF.js extracted ${lines.length} text line${lines.length === 1 ? "" : "s"} from ${pageCount} page${pageCount === 1 ? "" : "s"}.`;
+      els.importSummary.textContent = t("noSongsDetected", {
+        fileName,
+        lineCount: lines.length,
+        lineSuffix: getPluralKey(lines.length, "textLineOne", "textLineMany"),
+        pageCount,
+        pageSuffix: getPluralKey(pageCount, "pageSuffixOne", "pageSuffixMany")
+      });
       els.importList.textContent = "";
 
       const samples = lines.slice(0, 40);
       if (!samples.length) {
         const item = document.createElement("div");
         item.className = "import-item";
-        item.textContent = "No text lines were extracted. This file may be scanned/image-based or may require OCR.";
+        item.textContent = t("noTextExtracted");
         els.importList.append(item);
       } else {
         samples.forEach(line => {
@@ -6915,7 +7294,11 @@ Any use not expressly permitted by this license is prohibited.</pre>
           const meta = document.createElement("span");
           item.className = "import-item";
           title.textContent = line.text;
-          meta.textContent = `Page ${line.page}, y ${Math.round(line.y)}, font ${Math.round(line.fontSize)}`;
+          meta.textContent = t("pageMeta", {
+            page: line.page,
+            y: Math.round(line.y),
+            fontSize: Math.round(line.fontSize)
+          });
           item.append(title, meta);
           els.importList.append(item);
         });
@@ -6923,8 +7306,8 @@ Any use not expressly permitted by this license is prohibited.</pre>
 
       els.importDialog.classList.remove("hidden");
       els.confirmImport.disabled = true;
-      els.cancelImport.textContent = "Close";
-      setImportStatus("PDF text extracted, but no songs were detected. Review the raw line sample.");
+      els.cancelImport.textContent = t("close");
+      setImportStatus(t("pdfTextNoSongs"));
     }
 
     function closeImportPreview() {
@@ -6933,7 +7316,7 @@ Any use not expressly permitted by this license is prohibited.</pre>
       els.importSummary.textContent = "";
       els.importList.textContent = "";
       els.confirmImport.disabled = false;
-      els.cancelImport.textContent = "Cancel";
+      els.cancelImport.textContent = t("cancel");
     }
 
     function confirmImport() {
@@ -6950,7 +7333,11 @@ Any use not expressly permitted by this license is prohibited.</pre>
       refreshSongOptions(firstImportedIndex);
       closeImportPreview();
       rebuildSlides();
-      setImportStatus(`Added ${addedCount} imported song${addedCount === 1 ? "" : "s"}.`);
+      setImportStatus(t("addedImportedSongs", {
+        count: addedCount,
+        suffix: getPluralKey(addedCount, "addedImportedSuffixOne", "addedImportedSuffixMany"),
+        songSuffix: getPluralKey(addedCount, "importSongOne", "importSongMany")
+      }));
     }
 
     function openLicenseDialog() {
@@ -6982,7 +7369,7 @@ Any use not expressly permitted by this license is prohibited.</pre>
         if (song && song.title && Array.isArray(song.sections)) {
           const sections = normalizeSavedSections(song.sections);
           if (sections.length && !songs.some(existing => existing.title === song.title)) {
-            songs.push({ title: song.title, author: "Local songbook", sections });
+            songs.push({ title: song.title, author: t("localSongbook"), sections });
           }
         }
       });
@@ -7080,7 +7467,7 @@ Any use not expressly permitted by this license is prohibited.</pre>
       if (!matches.length) {
         const empty = document.createElement("div");
         empty.className = "song-result song-result-empty";
-        empty.textContent = "No matching songs";
+        empty.textContent = t("noMatchingSongs");
         els.songbookList.append(empty);
         return;
       }
@@ -7105,8 +7492,8 @@ Any use not expressly permitted by this license is prohibited.</pre>
       const meta = document.createElement("span");
       card.type = "button";
       card.className = "songbook-card songbook-card-add";
-      title.textContent = "+ Add new song";
-      meta.textContent = "Create a local song in this browser";
+      title.textContent = t("addNewSong");
+      meta.textContent = t("createLocalSong");
       card.append(title, meta);
       card.addEventListener("click", openNewSongEditor);
       return card;
@@ -7115,7 +7502,12 @@ Any use not expressly permitted by this license is prohibited.</pre>
     function describeSongSections(song) {
       const sections = getSongSections(song);
       const lineCount = sections.reduce((total, section) => total + section.lines.length, 0);
-      return `${sections.length} section${sections.length === 1 ? "" : "s"} · ${lineCount} line${lineCount === 1 ? "" : "s"}`;
+      return t("sectionCount", {
+        sectionCount: sections.length,
+        sectionSuffix: getPluralKey(sections.length, "sectionOne", "sectionMany"),
+        lineCount,
+        lineSuffix: getPluralKey(lineCount, "lineOne", "lineMany")
+      });
     }
 
     function openSongEditor(index) {
@@ -7136,21 +7528,13 @@ Any use not expressly permitted by this license is prohibited.</pre>
     function openNewSongEditor() {
       state.editingSongIndex = null;
       state.editingNewSong = true;
-      els.songbookEditTitle.textContent = "New song";
+      els.songbookEditTitle.textContent = t("newSong");
       els.songbookEditTitle.classList.add("hidden");
       els.songbookTitleInput.classList.remove("hidden");
       els.songbookTitleInput.value = "";
       els.songbookEditStatus.textContent = "";
       els.songbookText.value = "";
-      els.songbookText.placeholder = [
-        "Verse line 1",
-        "Verse line 2",
-        "",
-        "Chorus line 1",
-        "Chorus line 2",
-        "",
-        "Bridge line 1"
-      ].join("\n");
+      els.songbookText.placeholder = t("newSongPlaceholder");
       els.songbookTrack.classList.add("editing");
       window.setTimeout(() => els.songbookTitleInput.focus(), 220);
     }
@@ -7181,23 +7565,23 @@ Any use not expressly permitted by this license is prohibited.</pre>
     function saveEditedSong() {
       const sections = parseEditedSongText(els.songbookText.value);
       if (!sections.length) {
-        els.songbookEditStatus.textContent = "Cannot save an empty song.";
+        els.songbookEditStatus.textContent = t("emptySongError");
         return;
       }
 
       if (state.editingNewSong) {
         const title = els.songbookTitleInput.value.trim();
         if (!title) {
-          els.songbookEditStatus.textContent = "Song title is required.";
+          els.songbookEditStatus.textContent = t("songTitleRequired");
           return;
         }
 
         if (songs.some(song => normalizeSearch(song.title) === normalizeSearch(title))) {
-          els.songbookEditStatus.textContent = "A song with this title already exists.";
+          els.songbookEditStatus.textContent = t("songAlreadyExists");
           return;
         }
 
-        const song = { title, author: "Local songbook", sections };
+        const song = { title, author: t("localSongbook"), sections };
         songs.push(song);
         const persisted = storeCustomSong(song);
         state.songIndex = songs.length - 1;
@@ -7210,7 +7594,7 @@ Any use not expressly permitted by this license is prohibited.</pre>
         renderSongbookList();
         refreshSongOptions(state.songIndex);
         rebuildSlides();
-        els.songbookEditStatus.textContent = persisted ? "Saved." : "Saved for this session. Browser storage is unavailable.";
+        els.songbookEditStatus.textContent = persisted ? t("saved") : t("savedSessionOnly");
         return;
       }
 
@@ -7225,7 +7609,7 @@ Any use not expressly permitted by this license is prohibited.</pre>
         state.slideIndex = 0;
         rebuildSlides();
       }
-      els.songbookEditStatus.textContent = persisted ? "Saved." : "Saved for this session. Browser storage is unavailable.";
+      els.songbookEditStatus.textContent = persisted ? t("saved") : t("savedSessionOnly");
     }
 
     function refreshSongOptions(selectedIndex = state.songIndex) {
@@ -7268,7 +7652,7 @@ Any use not expressly permitted by this license is prohibited.</pre>
       if (!matches.length) {
         const item = document.createElement("li");
         item.className = "song-result song-result-empty";
-        item.textContent = "No matching songs";
+        item.textContent = t("noMatchingSongs");
         els.songResults.append(item);
         return matches;
       }
@@ -7328,9 +7712,12 @@ Any use not expressly permitted by this license is prohibited.</pre>
     }
 
     function init() {
+      state.currentLanguage = detectInitialLanguage();
       loadSongbookEdits();
       refreshSongOptions();
 
+      els.languagePl.addEventListener("click", () => setLanguage("pl"));
+      els.languageEn.addEventListener("click", () => setLanguage("en"));
       els.startApp.addEventListener("click", startApp);
       els.songSearch.addEventListener("focus", () => {
         showAllSongResults();
@@ -7428,6 +7815,7 @@ Any use not expressly permitted by this license is prohibited.</pre>
       }, 120));
 
       rebuildSlides();
+      applyLanguage();
       setInterval(() => {
         const slide = state.isBlank ? "" : (state.slides[state.slideIndex] || "");
         renderDisplay(slide);
