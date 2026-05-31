@@ -162,6 +162,26 @@
       cursor: default;
     }
 
+    .song-result-divider {
+      align-items: center;
+      color: var(--muted);
+      display: flex;
+      font-size: 0.72rem;
+      font-weight: 700;
+      gap: 8px;
+      letter-spacing: 0.08em;
+      padding: 8px 4px 6px;
+      text-transform: uppercase;
+    }
+
+    .song-result-divider::before,
+    .song-result-divider::after {
+      background: var(--line);
+      content: "";
+      flex: 1;
+      height: 1px;
+    }
+
     input[type="range"] { width: 100%; accent-color: var(--accent); }
 
     .font-row {
@@ -6078,13 +6098,15 @@ Any use not expressly permitted by this license is prohibited.</pre>
       setlistPosition: null,
       isSetlistActive: false,
       setlistTransition: null,
-      draggedSetlistIndex: null
+      draggedSetlistIndex: null,
+      songPreviewCounts: {}
     };
 
     const storageKeys = {
       songbookEdits: "worshipSlides.songbookEdits.v1",
       customSongs: "worshipSlides.customSongs.v1",
-      language: "worshipSlides.language.v1"
+      language: "worshipSlides.language.v1",
+      songPreviewCounts: "worshipSlides.songPreviewCounts.v1"
     };
 
     const fontSizing = {
@@ -6174,6 +6196,8 @@ Any use not expressly permitted by this license is prohibited.</pre>
         addNewSong: "+ Dodaj nową pieśń",
         createLocalSong: "Utwórz lokalną pieśń w tej przeglądarce",
         noMatchingSongs: "Brak pasujących pieśni",
+        topSongs: "Najczęściej wybierane",
+        otherSongs: "Pozostałe",
         localSongbook: "Lokalny śpiewnik",
         songTitleRequired: "Tytuł pieśni jest wymagany.",
         songAlreadyExists: "Pieśń o takim tytule już istnieje.",
@@ -6283,6 +6307,8 @@ Any use not expressly permitted by this license is prohibited.</pre>
         addNewSong: "+ Add new song",
         createLocalSong: "Create a local song in this browser",
         noMatchingSongs: "No matching songs",
+        topSongs: "Most used",
+        otherSongs: "Other songs",
         localSongbook: "Local songbook",
         songTitleRequired: "Song title is required.",
         songAlreadyExists: "A song with this title already exists.",
@@ -7432,6 +7458,7 @@ Any use not expressly permitted by this license is prohibited.</pre>
     function loadSongAt(index, slideIndex = 0) {
       state.songIndex = Math.max(0, Math.min(index, songs.length - 1));
       state.slideIndex = Math.max(0, slideIndex);
+      recordSongPreview(state.songIndex);
       els.songSearch.value = songs[state.songIndex]?.title || "";
       hideSongResults();
       rebuildSlides();
@@ -7701,6 +7728,38 @@ Any use not expressly permitted by this license is prohibited.</pre>
       }
     }
 
+    function loadSongPreviewCounts() {
+      try {
+        const stored = JSON.parse(window.localStorage.getItem(storageKeys.songPreviewCounts) || "{}");
+        state.songPreviewCounts = Object.fromEntries(
+          Object.entries(stored)
+            .filter(([, count]) => Number.isFinite(Number(count)) && Number(count) > 0)
+            .map(([title, count]) => [title, Number(count)])
+        );
+      } catch {
+        state.songPreviewCounts = {};
+      }
+    }
+
+    function storeSongPreviewCounts() {
+      try {
+        window.localStorage.setItem(storageKeys.songPreviewCounts, JSON.stringify(state.songPreviewCounts));
+      } catch {
+        // The ranking is an enhancement; the app should keep working without storage.
+      }
+    }
+
+    function getSongPreviewCount(song) {
+      return state.songPreviewCounts[song?.title] || 0;
+    }
+
+    function recordSongPreview(songIndex) {
+      const song = songs[songIndex];
+      if (!song?.title) return;
+      state.songPreviewCounts[song.title] = getSongPreviewCount(song) + 1;
+      storeSongPreviewCounts();
+    }
+
     function openSongbookEditor() {
       els.songbookFilter.value = "";
       renderSongbookList();
@@ -7730,7 +7789,7 @@ Any use not expressly permitted by this license is prohibited.</pre>
 
     function renderSetlistResults() {
       if (!els.setlistResults) return;
-      const matches = getSongMatches(els.setlistSearch.value);
+      const { top, rest, matches } = getSongMatchGroups(els.setlistSearch.value);
       els.setlistResults.textContent = "";
       if (!matches.length) {
         const empty = document.createElement("div");
@@ -7740,14 +7799,22 @@ Any use not expressly permitted by this license is prohibited.</pre>
         return;
       }
 
-      matches.forEach(({ song, index }) => {
+      const appendSongCard = ({ song, index }) => {
         const card = document.createElement("button");
         card.type = "button";
         card.className = "songbook-card";
         card.textContent = song.title;
         card.addEventListener("click", () => addSongToSetlist(index));
         els.setlistResults.append(card);
-      });
+      };
+
+      if (top.length) els.setlistResults.append(createSongDivider(t("topSongs")));
+      top.forEach(appendSongCard);
+
+      if (rest.length) {
+        if (top.length) els.setlistResults.append(createSongDivider(t("otherSongs")));
+        rest.forEach(appendSongCard);
+      }
     }
 
     function renderSetlistSongs() {
@@ -8102,16 +8169,48 @@ Any use not expressly permitted by this license is prohibited.</pre>
 
     function getSongMatches(query) {
       const normalizedQuery = normalizeSearch(query.trim());
-      const items = songs
-        .map((song, index) => ({ song, index, title: normalizeSearch(song.title) }))
+      const items = songs.map((song, index) => ({
+        song,
+        index,
+        title: normalizeSearch(song.title),
+        previewCount: getSongPreviewCount(song)
+      }));
+      const matchingItems = normalizedQuery
+        ? items.filter(item => item.title.includes(normalizedQuery))
+        : items;
+      const topItems = matchingItems
+        .filter(item => item.previewCount > 0)
+        .sort((a, b) => b.previewCount - a.previewCount || a.title.localeCompare(b.title))
+        .slice(0, 5);
+      const topIndexes = new Set(topItems.map(item => item.index));
+      const restItems = matchingItems
+        .filter(item => !topIndexes.has(item.index))
         .sort((a, b) => a.title.localeCompare(b.title));
 
-      if (!normalizedQuery) return items;
-      return items.filter(item => item.title.includes(normalizedQuery));
+      return [...topItems, ...restItems];
+    }
+
+    function getSongMatchGroups(query) {
+      const matches = getSongMatches(query);
+      const top = matches.filter(item => item.previewCount > 0).slice(0, 5);
+      const topIndexes = new Set(top.map(item => item.index));
+      return {
+        top,
+        rest: matches.filter(item => !topIndexes.has(item.index)),
+        matches
+      };
+    }
+
+    function createSongDivider(label, tagName = "div") {
+      const divider = document.createElement(tagName);
+      divider.className = "song-result-divider";
+      divider.textContent = label;
+      divider.setAttribute("role", "presentation");
+      return divider;
     }
 
     function renderSongResults(query = els.songSearch.value) {
-      const matches = getSongMatches(query);
+      const { top, rest, matches } = getSongMatchGroups(query);
       els.songResults.textContent = "";
       state.songResultIndex = Math.min(state.songResultIndex, Math.max(0, matches.length - 1));
 
@@ -8123,7 +8222,7 @@ Any use not expressly permitted by this license is prohibited.</pre>
         return matches;
       }
 
-      matches.forEach(({ song, index }, resultIndex) => {
+      const appendSongItem = ({ song, index }, resultIndex) => {
         const item = document.createElement("li");
         item.className = "song-result";
         item.id = `songResult-${resultIndex}`;
@@ -8135,7 +8234,22 @@ Any use not expressly permitted by this license is prohibited.</pre>
           selectSong(index);
         });
         els.songResults.append(item);
+      };
+
+      let resultIndex = 0;
+      if (top.length) els.songResults.append(createSongDivider(t("topSongs"), "li"));
+      top.forEach(item => {
+        appendSongItem(item, resultIndex);
+        resultIndex += 1;
       });
+
+      if (rest.length) {
+        if (top.length) els.songResults.append(createSongDivider(t("otherSongs"), "li"));
+        rest.forEach(item => {
+          appendSongItem(item, resultIndex);
+          resultIndex += 1;
+        });
+      }
 
       els.songSearch.setAttribute("aria-activedescendant", `songResult-${state.songResultIndex}`);
       return matches;
@@ -8166,6 +8280,7 @@ Any use not expressly permitted by this license is prohibited.</pre>
       state.isBlank = false;
       state.songIndex = Math.max(0, Math.min(index, songs.length - 1));
       state.slideIndex = 0;
+      recordSongPreview(state.songIndex);
       els.songSearch.value = songs[state.songIndex].title;
       hideSongResults();
       rebuildSlides();
@@ -8184,6 +8299,7 @@ Any use not expressly permitted by this license is prohibited.</pre>
     function init() {
       state.currentLanguage = detectInitialLanguage();
       loadSongbookEdits();
+      loadSongPreviewCounts();
       refreshSongOptions();
 
       els.languagePl.addEventListener("click", () => setLanguage("pl"));
