@@ -7034,14 +7034,23 @@ Any use not expressly permitted by this license is prohibited.</pre>
       const song = songs[state.songIndex];
       clearSongRemainders();
       state.slides = splitLyrics(song, fontSizing.autoSplitSize);
-      state.slideIndex = Math.min(state.slideIndex, state.slides.length - 1);
+      state.slideIndex = Math.min(state.slideIndex, getVisibleSlides().length - 1);
       renderSlideGallery();
       render();
     }
 
+    function getVisibleSlides() {
+      return [songs[state.songIndex]?.title || "", ...state.slides];
+    }
+
+    function getActiveSlide() {
+      return getVisibleSlides()[state.slideIndex] || "";
+    }
+
     function render() {
       const song = songs[state.songIndex];
-      const activeSlide = state.slides[state.slideIndex] || "";
+      const visibleSlides = getVisibleSlides();
+      const activeSlide = visibleSlides[state.slideIndex] || "";
       const displayFontSize = getDisplayFontSize(activeSlide, state.slideIndex);
       const slide = state.isBlank ? "" : formatSlideText(activeSlide, displayFontSize);
       syncPreviewLayout();
@@ -7054,17 +7063,17 @@ Any use not expressly permitted by this license is prohibited.</pre>
       els.previewSlide.style.fontSize = `${displayFontSize}px`;
       updatePreviewScale();
       syncFontControls(displayFontSize);
-      els.slideStatus.textContent = `${state.slideIndex + 1} / ${state.slides.length}`;
+      els.slideStatus.textContent = `${state.slideIndex + 1} / ${visibleSlides.length}`;
       els.splitStatus.textContent = state.isSetlistActive
         ? t("setlistStatus", {
           songCurrent: state.setlistPosition + 1,
           songTotal: state.setlistSongIndexes.length,
           slideCurrent: state.slideIndex + 1,
-          slideTotal: state.slides.length
+          slideTotal: visibleSlides.length
         })
         : t("splitStatus", {
-          count: state.slides.length,
-          suffix: getPluralKey(state.slides.length, "splitSuffixOne", "splitSuffixMany"),
+          count: visibleSlides.length,
+          suffix: getPluralKey(visibleSlides.length, "splitSuffixOne", "splitSuffixMany"),
           size: displayFontSize
         });
       els.prevSlide.disabled = !canGo(-1);
@@ -7095,7 +7104,7 @@ Any use not expressly permitted by this license is prohibited.</pre>
 
     function renderSlideGallery() {
       els.slideGallery.textContent = "";
-      state.slides.forEach((slide, index) => {
+      getVisibleSlides().forEach((slide, index) => {
         const button = document.createElement("button");
         const label = document.createElement("span");
         const frame = document.createElement("span");
@@ -7148,8 +7157,9 @@ Any use not expressly permitted by this license is prohibited.</pre>
     }
 
     function goToSlide(index) {
-      state.slideIndex = Math.max(0, Math.min(state.slides.length - 1, index));
+      state.slideIndex = Math.max(0, Math.min(getVisibleSlides().length - 1, index));
       state.isBlank = false;
+      state.setlistTransition = null;
       render();
     }
 
@@ -7410,8 +7420,9 @@ Any use not expressly permitted by this license is prohibited.</pre>
 
     function canGo(delta) {
       if (state.isSetlistActive && state.setlistTransition) return true;
+      const visibleSlideCount = getVisibleSlides().length;
       if (delta > 0) {
-        return state.slideIndex < state.slides.length - 1
+        return state.slideIndex < visibleSlideCount - 1
           || (state.isSetlistActive && state.setlistPosition < state.setlistSongIndexes.length - 1);
       }
       return state.slideIndex > 0
@@ -7441,7 +7452,9 @@ Any use not expressly permitted by this license is prohibited.</pre>
         return;
       }
 
-      if (delta > 0 && state.slideIndex >= state.slides.length - 1 && state.isSetlistActive) {
+      const visibleSlideCount = getVisibleSlides().length;
+
+      if (delta > 0 && state.slideIndex >= visibleSlideCount - 1 && state.isSetlistActive) {
         if (state.setlistPosition < state.setlistSongIndexes.length - 1) {
           state.setlistTransition = {
             fromPosition: state.setlistPosition,
@@ -7471,7 +7484,7 @@ Any use not expressly permitted by this license is prohibited.</pre>
 
       state.isBlank = false;
       state.setlistTransition = null;
-      state.slideIndex = Math.max(0, Math.min(state.slides.length - 1, state.slideIndex + delta));
+      state.slideIndex = Math.max(0, Math.min(visibleSlideCount - 1, state.slideIndex + delta));
       render();
     }
 
@@ -8286,7 +8299,7 @@ Any use not expressly permitted by this license is prohibited.</pre>
       rebuildSlides();
       applyLanguage();
       setInterval(() => {
-        const slide = state.isBlank ? "" : (state.slides[state.slideIndex] || "");
+        const slide = state.isBlank ? "" : getActiveSlide();
         renderDisplay(slide);
       }, 1000);
     }
