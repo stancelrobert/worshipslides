@@ -670,6 +670,101 @@
       background: #dceee8;
     }
 
+    .setlist-search {
+      display: grid;
+      gap: 10px;
+    }
+
+    .setlist-dialog {
+      height: min(720px, calc(100vh - 48px));
+      max-width: 960px;
+      width: min(960px, 100%);
+    }
+
+    .setlist-body {
+      display: grid;
+      flex: 1;
+      gap: 18px;
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+      min-height: 0;
+      overflow: hidden;
+    }
+
+    .setlist-column {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      min-height: 0;
+    }
+
+    .setlist-results,
+    .setlist-songs {
+      display: grid;
+      gap: 8px;
+      min-height: 0;
+      overflow: auto;
+    }
+
+    .setlist-results {
+      flex: 1;
+    }
+
+    .setlist-songs {
+      align-content: start;
+      flex: 1;
+      gap: 0;
+      grid-auto-rows: 58px;
+    }
+
+    .setlist-card {
+      align-items: center;
+      background: white;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      color: var(--text);
+      cursor: grab;
+      display: grid;
+      gap: 10px;
+      grid-template-columns: minmax(0, 1fr) auto;
+      height: 58px;
+      padding: 10px 12px;
+      text-align: left;
+    }
+
+    .setlist-card.dragging {
+      cursor: grabbing;
+      opacity: 0.45;
+    }
+
+    .setlist-card.drag-over {
+      border-color: var(--accent);
+      box-shadow: inset 0 0 0 2px rgba(31, 122, 101, 0.24);
+    }
+
+    .setlist-card strong,
+    .setlist-card span {
+      display: block;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .setlist-card span {
+      color: var(--muted);
+      font-size: 0.88rem;
+      line-height: 1.35;
+    }
+
+    .setlist-actions {
+      display: flex;
+      gap: 6px;
+    }
+
+    .setlist-actions button {
+      min-height: 34px;
+      padding: 0 10px;
+    }
+
     .songbook-card strong,
     .songbook-card span {
       display: block;
@@ -785,6 +880,17 @@
         align-items: stretch;
         flex-direction: column;
       }
+      .setlist-dialog {
+        height: min(720px, calc(100vh - 48px));
+      }
+      .setlist-body {
+        grid-template-columns: 1fr;
+        overflow: auto;
+      }
+      .setlist-results,
+      .setlist-songs {
+        max-height: 260px;
+      }
       .dialog-footer { flex-direction: column-reverse; }
       .welcome {
         align-items: end;
@@ -862,6 +968,7 @@ Wszystko śpiewa Ci, Święty!</span></div>
       </div>
 
       <button id="openSongbookEditor" class="secondary" type="button">Edit songbook</button>
+      <button id="openSetlistEditor" class="secondary" type="button">Prepare setlist</button>
 
       <div class="field hidden">
         <div class="section-label">Import</div>
@@ -942,6 +1049,29 @@ Wszystko śpiewa Ci, Święty!</span></div>
       <footer class="dialog-footer">
         <button id="cancelImport" class="secondary" type="button">Cancel</button>
         <button id="confirmImport" type="button">Add songs</button>
+      </footer>
+    </section>
+  </div>
+  <div id="setlistDialog" class="dialog-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="setlistDialogTitle">
+    <section class="dialog setlist-dialog">
+      <header>
+        <h2 id="setlistDialogTitle">Prepare setlist</h2>
+      </header>
+      <div class="dialog-body setlist-body">
+        <div class="setlist-column setlist-search">
+          <p id="setlistIntro" class="hint">Add songs in the order they will be used, then start the setlist.</p>
+          <input id="setlistSearch" type="text" autocomplete="off" placeholder="Search songs">
+          <div id="setlistResults" class="setlist-results"></div>
+        </div>
+        <div class="setlist-column">
+          <div class="section-label" id="setlistSongsLabel">Setlist</div>
+          <div id="setlistSongs" class="setlist-songs"></div>
+        </div>
+      </div>
+      <footer class="dialog-footer">
+        <button id="clearSetlist" class="secondary" type="button">Clear</button>
+        <button id="closeSetlistEditor" class="secondary" type="button">Close</button>
+        <button id="startSetlist" type="button">Start setlist</button>
       </footer>
     </section>
   </div>
@@ -5943,7 +6073,12 @@ Any use not expressly permitted by this license is prohibited.</pre>
       pendingImport: [],
       editingSongIndex: null,
       editingNewSong: false,
-      currentLanguage: "pl"
+      currentLanguage: "pl",
+      setlistSongIndexes: [],
+      setlistPosition: null,
+      isSetlistActive: false,
+      setlistTransition: null,
+      draggedSetlistIndex: null
     };
 
     const storageKeys = {
@@ -5986,6 +6121,19 @@ Any use not expressly permitted by this license is prohibited.</pre>
         appIntro: "Wybierz pieśń, otwórz ekran dla projektora i wyświetl tekst uczestnikom.",
         song: "Pieśń",
         editSongbook: "Edytuj śpiewnik",
+        prepareSetlist: "Przygotuj setlistę",
+        prepareSetlistTitle: "Przygotuj setlistę",
+        setlistIntro: "Dodaj pieśni w kolejności użycia, a potem uruchom setlistę.",
+        searchSongs: "Szukaj pieśni",
+        setlist: "Setlista",
+        setlistEmpty: "Setlista jest pusta.",
+        addToSetlist: "Dodaj",
+        removeFromSetlist: "Usuń",
+        moveUp: "W górę",
+        moveDown: "W dół",
+        clearSetlist: "Wyczyść",
+        startSetlist: "Start setlisty",
+        setlistStatus: "pieśń {songCurrent} / {songTotal} · slajd {slideCurrent} / {slideTotal}",
         import: "Import",
         importPdf: "Importuj PDF",
         importing: "Importuję...",
@@ -6082,6 +6230,19 @@ Any use not expressly permitted by this license is prohibited.</pre>
         appIntro: "Choose a song, set the size, and send lyrics to the projector window.",
         song: "Song",
         editSongbook: "Edit songbook",
+        prepareSetlist: "Prepare setlist",
+        prepareSetlistTitle: "Prepare setlist",
+        setlistIntro: "Add songs in the order they will be used, then start the setlist.",
+        searchSongs: "Search songs",
+        setlist: "Setlist",
+        setlistEmpty: "Setlist is empty.",
+        addToSetlist: "Add",
+        removeFromSetlist: "Remove",
+        moveUp: "Up",
+        moveDown: "Down",
+        clearSetlist: "Clear",
+        startSetlist: "Start setlist",
+        setlistStatus: "song {songCurrent} / {songTotal} · slide {slideCurrent} / {slideTotal}",
         import: "Import",
         importPdf: "Import PDF",
         importing: "Importing...",
@@ -6180,6 +6341,16 @@ Any use not expressly permitted by this license is prohibited.</pre>
       cancelImport: document.getElementById("cancelImport"),
       confirmImport: document.getElementById("confirmImport"),
       openSongbookEditor: document.getElementById("openSongbookEditor"),
+      openSetlistEditor: document.getElementById("openSetlistEditor"),
+      setlistDialog: document.getElementById("setlistDialog"),
+      setlistIntro: document.getElementById("setlistIntro"),
+      setlistSearch: document.getElementById("setlistSearch"),
+      setlistResults: document.getElementById("setlistResults"),
+      setlistSongsLabel: document.getElementById("setlistSongsLabel"),
+      setlistSongs: document.getElementById("setlistSongs"),
+      clearSetlist: document.getElementById("clearSetlist"),
+      closeSetlistEditor: document.getElementById("closeSetlistEditor"),
+      startSetlist: document.getElementById("startSetlist"),
       songbookDialog: document.getElementById("songbookDialog"),
       songbookTrack: document.getElementById("songbookTrack"),
       songbookFilter: document.getElementById("songbookFilter"),
@@ -6279,6 +6450,7 @@ Any use not expressly permitted by this license is prohibited.</pre>
       setText(".brand p", t("appIntro"));
       setText('label[for="songSearch"]', t("song"));
       els.openSongbookEditor.textContent = t("editSongbook");
+      els.openSetlistEditor.textContent = t("prepareSetlist");
       setText(".field.hidden .section-label", t("import"));
       els.importPdf.textContent = els.importPdf.classList.contains("busy") ? t("importing") : t("importPdf");
       if (els.importStatus.textContent === translations.pl.importStatusIdle || els.importStatus.textContent === translations.en.importStatusIdle) {
@@ -6314,6 +6486,13 @@ Any use not expressly permitted by this license is prohibited.</pre>
       setText("#importDialogTitle", t("reviewPdfImport"));
       els.cancelImport.textContent = els.cancelImport.textContent === translations.pl.close || els.cancelImport.textContent === translations.en.close ? t("close") : t("cancel");
       els.confirmImport.textContent = t("addSongs");
+      setText("#setlistDialogTitle", t("prepareSetlistTitle"));
+      els.setlistIntro.textContent = t("setlistIntro");
+      els.setlistSearch.placeholder = t("searchSongs");
+      els.setlistSongsLabel.textContent = t("setlist");
+      els.clearSetlist.textContent = t("clearSetlist");
+      els.closeSetlistEditor.textContent = t("close");
+      els.startSetlist.textContent = t("startSetlist");
       setText("#songbookDialogTitle", t("editSongbookTitle"));
       const songbookPanels = document.querySelectorAll(".songbook-panel");
       songbookPanels[0]?.setAttribute("aria-label", t("songList"));
@@ -6334,6 +6513,8 @@ Any use not expressly permitted by this license is prohibited.</pre>
       const displayDoc = getDisplayDocument();
       if (displayDoc) displayDoc.title = t("openAudienceDisplay");
 
+      renderSetlistResults();
+      renderSetlistSongs();
       renderSongbookList();
       render();
     }
@@ -6874,13 +7055,20 @@ Any use not expressly permitted by this license is prohibited.</pre>
       updatePreviewScale();
       syncFontControls(displayFontSize);
       els.slideStatus.textContent = `${state.slideIndex + 1} / ${state.slides.length}`;
-      els.splitStatus.textContent = t("splitStatus", {
-        count: state.slides.length,
-        suffix: getPluralKey(state.slides.length, "splitSuffixOne", "splitSuffixMany"),
-        size: displayFontSize
-      });
-      els.prevSlide.disabled = state.slideIndex === 0;
-      els.nextSlide.disabled = state.slideIndex >= state.slides.length - 1;
+      els.splitStatus.textContent = state.isSetlistActive
+        ? t("setlistStatus", {
+          songCurrent: state.setlistPosition + 1,
+          songTotal: state.setlistSongIndexes.length,
+          slideCurrent: state.slideIndex + 1,
+          slideTotal: state.slides.length
+        })
+        : t("splitStatus", {
+          count: state.slides.length,
+          suffix: getPluralKey(state.slides.length, "splitSuffixOne", "splitSuffixMany"),
+          size: displayFontSize
+        });
+      els.prevSlide.disabled = !canGo(-1);
+      els.nextSlide.disabled = !canGo(1);
       els.blankSlide.setAttribute("aria-pressed", String(state.isBlank));
       els.blankSlide.textContent = state.isBlank ? t("showLyrics") : t("blank");
       updateGallerySelection();
@@ -7220,13 +7408,75 @@ Any use not expressly permitted by this license is prohibited.</pre>
       els.autoFit.checked = true;
     }
 
+    function canGo(delta) {
+      if (state.isSetlistActive && state.setlistTransition) return true;
+      if (delta > 0) {
+        return state.slideIndex < state.slides.length - 1
+          || (state.isSetlistActive && state.setlistPosition < state.setlistSongIndexes.length - 1);
+      }
+      return state.slideIndex > 0
+        || (state.isSetlistActive && state.setlistPosition > 0);
+    }
+
+    function loadSongAt(index, slideIndex = 0) {
+      state.songIndex = Math.max(0, Math.min(index, songs.length - 1));
+      state.slideIndex = Math.max(0, slideIndex);
+      els.songSearch.value = songs[state.songIndex]?.title || "";
+      hideSongResults();
+      rebuildSlides();
+    }
+
     function go(delta) {
-      state.slideIndex = Math.max(0, Math.min(state.slides.length - 1, state.slideIndex + delta));
+      if (state.isSetlistActive && state.setlistTransition) {
+        const transition = state.setlistTransition;
+        const shouldEnterTarget = delta > 0
+          ? transition.targetPosition > transition.fromPosition
+          : transition.targetPosition < transition.fromPosition;
+        const position = shouldEnterTarget ? transition.targetPosition : transition.fromPosition;
+        const slideIndex = shouldEnterTarget ? transition.targetSlideIndex : transition.fromSlideIndex;
+        state.setlistPosition = position;
+        state.setlistTransition = null;
+        state.isBlank = false;
+        loadSongAt(state.setlistSongIndexes[position], slideIndex);
+        return;
+      }
+
+      if (delta > 0 && state.slideIndex >= state.slides.length - 1 && state.isSetlistActive) {
+        if (state.setlistPosition < state.setlistSongIndexes.length - 1) {
+          state.setlistTransition = {
+            fromPosition: state.setlistPosition,
+            fromSlideIndex: state.slideIndex,
+            targetPosition: state.setlistPosition + 1,
+            targetSlideIndex: 0
+          };
+          state.isBlank = true;
+          render();
+          return;
+        }
+      }
+
+      if (delta < 0 && state.slideIndex <= 0 && state.isSetlistActive) {
+        if (state.setlistPosition > 0) {
+          state.setlistTransition = {
+            fromPosition: state.setlistPosition,
+            fromSlideIndex: state.slideIndex,
+            targetPosition: state.setlistPosition - 1,
+            targetSlideIndex: Number.MAX_SAFE_INTEGER
+          };
+          state.isBlank = true;
+          render();
+          return;
+        }
+      }
+
       state.isBlank = false;
+      state.setlistTransition = null;
+      state.slideIndex = Math.max(0, Math.min(state.slides.length - 1, state.slideIndex + delta));
       render();
     }
 
     function toggleBlankSlide() {
+      state.setlistTransition = null;
       state.isBlank = !state.isBlank;
       render();
     }
@@ -7450,6 +7700,209 @@ Any use not expressly permitted by this license is prohibited.</pre>
       els.songbookDialog.classList.add("hidden");
       showSongbookListView();
       els.openSongbookEditor.focus();
+    }
+
+    function openSetlistEditor() {
+      els.setlistSearch.value = "";
+      renderSetlistResults();
+      renderSetlistSongs();
+      els.setlistDialog.classList.remove("hidden");
+      els.setlistSearch.focus();
+    }
+
+    function closeSetlistEditor() {
+      els.setlistDialog.classList.add("hidden");
+      els.openSetlistEditor.focus();
+    }
+
+    function renderSetlistResults() {
+      if (!els.setlistResults) return;
+      const matches = getSongMatches(els.setlistSearch.value);
+      els.setlistResults.textContent = "";
+      if (!matches.length) {
+        const empty = document.createElement("div");
+        empty.className = "song-result song-result-empty";
+        empty.textContent = t("noMatchingSongs");
+        els.setlistResults.append(empty);
+        return;
+      }
+
+      matches.forEach(({ song, index }) => {
+        const card = document.createElement("button");
+        card.type = "button";
+        card.className = "songbook-card";
+        card.textContent = song.title;
+        card.addEventListener("click", () => addSongToSetlist(index));
+        els.setlistResults.append(card);
+      });
+    }
+
+    function renderSetlistSongs() {
+      if (!els.setlistSongs) return;
+      els.setlistSongs.textContent = "";
+      els.startSetlist.disabled = !state.setlistSongIndexes.length;
+      els.clearSetlist.disabled = !state.setlistSongIndexes.length;
+
+      if (!state.setlistSongIndexes.length) {
+        const empty = document.createElement("div");
+        empty.className = "song-result song-result-empty";
+        empty.textContent = t("setlistEmpty");
+        els.setlistSongs.append(empty);
+        return;
+      }
+
+      state.setlistSongIndexes.forEach((songIndex, setlistIndex) => {
+        const song = songs[songIndex];
+        const card = document.createElement("div");
+        const text = document.createElement("div");
+        const title = document.createElement("strong");
+        const meta = document.createElement("span");
+        const actions = document.createElement("div");
+        card.className = "setlist-card";
+        card.draggable = true;
+        card.dataset.setlistIndex = String(setlistIndex);
+        title.textContent = song?.title || "";
+        meta.textContent = `${setlistIndex + 1} / ${state.setlistSongIndexes.length}`;
+        actions.className = "setlist-actions";
+        card.addEventListener("dragstart", event => {
+          state.draggedSetlistIndex = setlistIndex;
+          card.classList.add("dragging");
+          event.dataTransfer.effectAllowed = "move";
+          event.dataTransfer.setData("text/plain", String(setlistIndex));
+        });
+        card.addEventListener("dragend", () => {
+          state.draggedSetlistIndex = null;
+          card.classList.remove("dragging");
+          clearSetlistDragOver();
+        });
+        card.addEventListener("dragover", event => {
+          event.preventDefault();
+          if (state.draggedSetlistIndex === null || state.draggedSetlistIndex === setlistIndex) return;
+          event.dataTransfer.dropEffect = "move";
+          clearSetlistDragOver();
+          card.classList.add("drag-over");
+        });
+        card.addEventListener("dragleave", () => {
+          card.classList.remove("drag-over");
+        });
+        card.addEventListener("drop", event => {
+          event.preventDefault();
+          const fromIndex = Number(event.dataTransfer.getData("text/plain"));
+          const fallbackIndex = state.draggedSetlistIndex;
+          reorderSetlistSong(Number.isNaN(fromIndex) ? fallbackIndex : fromIndex, setlistIndex);
+        });
+
+        const up = document.createElement("button");
+        up.type = "button";
+        up.className = "secondary";
+        up.textContent = "↑";
+        up.setAttribute("aria-label", t("moveUp"));
+        up.disabled = setlistIndex === 0;
+        up.addEventListener("click", () => moveSetlistSong(setlistIndex, -1));
+
+        const down = document.createElement("button");
+        down.type = "button";
+        down.className = "secondary";
+        down.textContent = "↓";
+        down.setAttribute("aria-label", t("moveDown"));
+        down.disabled = setlistIndex === state.setlistSongIndexes.length - 1;
+        down.addEventListener("click", () => moveSetlistSong(setlistIndex, 1));
+
+        const remove = document.createElement("button");
+        remove.type = "button";
+        remove.className = "secondary";
+        remove.textContent = t("removeFromSetlist");
+        remove.addEventListener("click", () => removeSetlistSong(setlistIndex));
+
+        actions.append(up, down, remove);
+        text.append(title, meta);
+        card.append(text, actions);
+        els.setlistSongs.append(card);
+      });
+    }
+
+    function addSongToSetlist(songIndex) {
+      state.setlistSongIndexes.push(songIndex);
+      renderSetlistSongs();
+    }
+
+    function clearSetlistDragOver() {
+      els.setlistSongs.querySelectorAll(".drag-over").forEach(card => card.classList.remove("drag-over"));
+    }
+
+    function updateSetlistPositionAfterReorder(fromIndex, toIndex) {
+      if (!state.isSetlistActive || state.setlistPosition === null) return;
+      if (state.setlistPosition === fromIndex) {
+        state.setlistPosition = toIndex;
+      } else if (fromIndex < state.setlistPosition && toIndex >= state.setlistPosition) {
+        state.setlistPosition -= 1;
+      } else if (fromIndex > state.setlistPosition && toIndex <= state.setlistPosition) {
+        state.setlistPosition += 1;
+      }
+    }
+
+    function reorderSetlistSong(fromIndex, toIndex) {
+      if (fromIndex === null || toIndex === null || fromIndex === toIndex) return;
+      if (fromIndex < 0 || fromIndex >= state.setlistSongIndexes.length) return;
+      if (toIndex < 0 || toIndex >= state.setlistSongIndexes.length) return;
+      state.setlistTransition = null;
+      const [songIndex] = state.setlistSongIndexes.splice(fromIndex, 1);
+      state.setlistSongIndexes.splice(toIndex, 0, songIndex);
+      updateSetlistPositionAfterReorder(fromIndex, toIndex);
+      state.draggedSetlistIndex = null;
+      renderSetlistSongs();
+      render();
+    }
+
+    function moveSetlistSong(index, delta) {
+      const nextIndex = index + delta;
+      if (nextIndex < 0 || nextIndex >= state.setlistSongIndexes.length) return;
+      state.setlistTransition = null;
+      const [songIndex] = state.setlistSongIndexes.splice(index, 1);
+      state.setlistSongIndexes.splice(nextIndex, 0, songIndex);
+      updateSetlistPositionAfterReorder(index, nextIndex);
+      renderSetlistSongs();
+      render();
+    }
+
+    function removeSetlistSong(index) {
+      state.setlistTransition = null;
+      state.setlistSongIndexes.splice(index, 1);
+      if (state.isSetlistActive) {
+        if (!state.setlistSongIndexes.length) {
+          state.isSetlistActive = false;
+          state.setlistPosition = null;
+          state.isBlank = false;
+        } else if (state.setlistPosition === index) {
+          state.setlistPosition = Math.min(index, state.setlistSongIndexes.length - 1);
+          loadSongAt(state.setlistSongIndexes[state.setlistPosition], 0);
+        } else if (index < state.setlistPosition) {
+          state.setlistPosition -= 1;
+        }
+      }
+      renderSetlistSongs();
+      render();
+    }
+
+    function clearSetlist() {
+      state.setlistSongIndexes = [];
+      state.isSetlistActive = false;
+      state.setlistPosition = null;
+      state.setlistTransition = null;
+      state.isBlank = false;
+      renderSetlistSongs();
+      render();
+    }
+
+    function startSetlist() {
+      if (!state.setlistSongIndexes.length) return;
+      state.isSetlistActive = true;
+      state.setlistPosition = 0;
+      state.setlistTransition = null;
+      state.isBlank = false;
+      closeSetlistEditor();
+      els.openSetlistEditor.blur();
+      loadSongAt(state.setlistSongIndexes[0], 0);
     }
 
     function showSongbookListView() {
@@ -7694,6 +8147,10 @@ Any use not expressly permitted by this license is prohibited.</pre>
     }
 
     function selectSong(index) {
+      state.isSetlistActive = false;
+      state.setlistPosition = null;
+      state.setlistTransition = null;
+      state.isBlank = false;
       state.songIndex = Math.max(0, Math.min(index, songs.length - 1));
       state.slideIndex = 0;
       els.songSearch.value = songs[state.songIndex].title;
@@ -7768,6 +8225,14 @@ Any use not expressly permitted by this license is prohibited.</pre>
       els.importDialog.addEventListener("click", event => {
         if (event.target === els.importDialog) closeImportPreview();
       });
+      els.openSetlistEditor.addEventListener("click", openSetlistEditor);
+      els.closeSetlistEditor.addEventListener("click", closeSetlistEditor);
+      els.setlistDialog.addEventListener("click", event => {
+        if (event.target === els.setlistDialog) closeSetlistEditor();
+      });
+      els.setlistSearch.addEventListener("input", renderSetlistResults);
+      els.clearSetlist.addEventListener("click", clearSetlist);
+      els.startSetlist.addEventListener("click", startSetlist);
       els.openSongbookEditor.addEventListener("click", openSongbookEditor);
       els.closeSongbookEditor.addEventListener("click", closeSongbookEditor);
       els.songbookDialog.addEventListener("click", event => {
@@ -7801,6 +8266,10 @@ Any use not expressly permitted by this license is prohibited.</pre>
         }
         if (!els.importDialog.classList.contains("hidden")) {
           if (event.key === "Escape") closeImportPreview();
+          return;
+        }
+        if (!els.setlistDialog.classList.contains("hidden")) {
+          if (event.key === "Escape") closeSetlistEditor();
           return;
         }
         const isSlideThumb = event.target.classList?.contains("slide-thumb");
