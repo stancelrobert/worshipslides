@@ -108,6 +108,16 @@
       width: 100%;
     }
 
+    .control-note {
+      color: var(--muted);
+      font-size: 0.82rem;
+      font-weight: 800;
+      letter-spacing: 0;
+      line-height: 1.25;
+      margin: 0;
+      text-transform: uppercase;
+    }
+
     .field label,
     .section-label {
       color: var(--muted);
@@ -1050,6 +1060,7 @@ Wszystko śpiewa Ci, Święty!</span></div>
       </div>
 
       <button id="openDisplay">Open audience display</button>
+      <p id="setlistLauncherLabel" class="control-note">Choose songs ahead of time and just advance slides.</p>
       <button id="openSetlistEditor" class="secondary" type="button">Prepare setlist</button>
 
       <div class="field hidden">
@@ -6212,8 +6223,9 @@ Any use not expressly permitted by this license is prohibited.</pre>
         song: "Pieśń",
         chooseSongLabel: "Wybierz pieśń:",
         editSongbook: "Edytuj śpiewnik",
-        prepareSetlist: "Chcę po prostu sterować pilotem w trakcie. Przygotuj playlistę",
-        prepareSetlistTitle: "Chcę po prostu sterować pilotem w trakcie. Przygotuj playlistę",
+        setlistLauncherLabel: "Chcę mieć pieśni wybrane z góry i po prostu przewijać slajdy:",
+        prepareSetlist: "Przygotuj listę pieśni",
+        prepareSetlistTitle: "Przygotuj listę pieśni",
         setlistIntro: "Dodaj pieśni w kolejności użycia, a potem uruchom setlistę.",
         searchSongs: "Szukaj pieśni",
         setlist: "Setlista",
@@ -6324,6 +6336,7 @@ Any use not expressly permitted by this license is prohibited.</pre>
         song: "Song",
         chooseSongLabel: "Choose a song:",
         editSongbook: "Edit songbook",
+        setlistLauncherLabel: "I want songs chosen ahead of time and just advance slides:",
         prepareSetlist: "Prepare setlist",
         prepareSetlistTitle: "Prepare setlist",
         setlistIntro: "Add songs in the order they will be used, then start the setlist.",
@@ -6438,6 +6451,7 @@ Any use not expressly permitted by this license is prohibited.</pre>
       cancelImport: document.getElementById("cancelImport"),
       confirmImport: document.getElementById("confirmImport"),
       openSongbookEditor: document.getElementById("openSongbookEditor"),
+      setlistLauncherLabel: document.getElementById("setlistLauncherLabel"),
       openSetlistEditor: document.getElementById("openSetlistEditor"),
       setlistDialog: document.getElementById("setlistDialog"),
       setlistIntro: document.getElementById("setlistIntro"),
@@ -6546,6 +6560,7 @@ Any use not expressly permitted by this license is prohibited.</pre>
       els.stageSongLabel.textContent = t("chooseSongLabel");
       setText("#songSearchLabel", t("song"));
       els.openSongbookEditor.textContent = t("editSongbook");
+      els.setlistLauncherLabel.textContent = t("setlistLauncherLabel");
       els.openSetlistEditor.textContent = t("prepareSetlist");
       setText(".field.hidden .section-label", t("import"));
       els.importPdf.textContent = els.importPdf.classList.contains("busy") ? t("importing") : t("importPdf");
