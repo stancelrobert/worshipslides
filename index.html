@@ -125,6 +125,24 @@
       perspective: 420px;
     }
 
+    .setlist-roller.rolling-forward {
+      animation: setlistRollForward 0.28s ease-out;
+    }
+
+    .setlist-roller.rolling-backward {
+      animation: setlistRollBackward 0.28s ease-out;
+    }
+
+    @keyframes setlistRollForward {
+      from { opacity: 0.55; transform: translateY(24px) rotateX(-16deg); }
+      to { opacity: 1; transform: translateY(0) rotateX(0); }
+    }
+
+    @keyframes setlistRollBackward {
+      from { opacity: 0.55; transform: translateY(-24px) rotateX(16deg); }
+      to { opacity: 1; transform: translateY(0) rotateX(0); }
+    }
+
     .setlist-roller-row {
       color: var(--text);
       font-size: 0.92rem;
@@ -6230,6 +6248,8 @@ Any use not expressly permitted by this license is prohibited.</pre>
       isSetlistActive: false,
       setlistTransition: null,
       draggedSetlistIndex: null,
+      setlistRollerPosition: null,
+      setlistRollerAnimationTimer: null,
       songPreviewCounts: {}
     };
 
@@ -7264,8 +7284,12 @@ Any use not expressly permitted by this license is prohibited.</pre>
 
     function renderSetlistRoller() {
       els.setlistRoller.textContent = "";
+      els.setlistRoller.classList.remove("rolling-forward", "rolling-backward");
       els.setlistRoller.classList.toggle("hidden", !state.isSetlistActive);
-      if (!state.isSetlistActive) return;
+      if (!state.isSetlistActive) {
+        state.setlistRollerPosition = null;
+        return;
+      }
 
       for (let offset = -2; offset <= 2; offset += 1) {
         const row = document.createElement("div");
@@ -7282,6 +7306,19 @@ Any use not expressly permitted by this license is prohibited.</pre>
         }
         els.setlistRoller.append(row);
       }
+
+      const previousPosition = state.setlistRollerPosition;
+      state.setlistRollerPosition = state.setlistPosition;
+      if (previousPosition === null || previousPosition === state.setlistPosition) return;
+
+      const animationClass = state.setlistPosition > previousPosition ? "rolling-forward" : "rolling-backward";
+      window.clearTimeout(state.setlistRollerAnimationTimer);
+      window.requestAnimationFrame(() => {
+        els.setlistRoller.classList.add(animationClass);
+        state.setlistRollerAnimationTimer = window.setTimeout(() => {
+          els.setlistRoller.classList.remove(animationClass);
+        }, 320);
+      });
     }
 
     function renderDisplay(slide, fontSize = getDisplayFontSize(slide, state.slideIndex)) {
