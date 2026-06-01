@@ -6594,6 +6594,25 @@ Any use not expressly permitted by this license is prohibited.</pre>
       return state.displayWindow.document;
     }
 
+    function handleNavigationKey(event) {
+      if (event.key === "ArrowRight" || event.key === "PageDown" || event.key === " ") {
+        event.preventDefault();
+        go(1);
+        return true;
+      }
+      if (event.key === "ArrowLeft" || event.key === "PageUp") {
+        event.preventDefault();
+        go(-1);
+        return true;
+      }
+      return false;
+    }
+
+    function bindDisplayKeyboardControls() {
+      if (!state.displayWindow || state.displayWindow.closed) return;
+      state.displayWindow.addEventListener("keydown", handleNavigationKey);
+    }
+
     function openDisplay() {
       if (!state.displayWindow || state.displayWindow.closed) {
         state.displayWindow = window.open("", "worshipSlidesDisplay", "popup=yes,width=1280,height=720");
@@ -6605,6 +6624,7 @@ Any use not expressly permitted by this license is prohibited.</pre>
         state.displayWindow.document.write(projectionHtml());
         state.displayWindow.document.close();
         state.displayWindow.addEventListener("resize", debounce(rebuildSlides, 120));
+        bindDisplayKeyboardControls();
       }
       state.displayWindow.focus();
       rebuildSlides();
@@ -8403,8 +8423,7 @@ Any use not expressly permitted by this license is prohibited.</pre>
         }
         const isSlideThumb = event.target.classList?.contains("slide-thumb");
         if (!isSlideThumb && /^(BUTTON|INPUT|SELECT|TEXTAREA)$/.test(event.target.tagName)) return;
-        if (event.key === "ArrowRight" || event.key === "PageDown" || event.key === " ") go(1);
-        if (event.key === "ArrowLeft" || event.key === "PageUp") go(-1);
+        handleNavigationKey(event);
       });
       window.addEventListener("resize", debounce(() => {
         updatePreviewScale();
