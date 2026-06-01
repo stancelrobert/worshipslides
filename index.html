@@ -118,6 +118,31 @@
       text-transform: uppercase;
     }
 
+    .setlist-roller {
+      display: grid;
+      gap: 4px;
+      margin-top: -4px;
+    }
+
+    .setlist-roller-row {
+      color: var(--text);
+      font-size: 0.92rem;
+      font-weight: 700;
+      line-height: 1.25;
+      min-height: 24px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .setlist-roller-row.current {
+      color: var(--accent);
+      font-weight: 900;
+      text-shadow:
+        0 3px 10px rgba(31, 122, 101, 0.26),
+        0 10px 28px rgba(31, 122, 101, 0.24);
+    }
+
     .field label,
     .section-label {
       color: var(--muted);
@@ -1062,6 +1087,7 @@ Wszystko śpiewa Ci, Święty!</span></div>
       <button id="openDisplay">Open audience display</button>
       <p id="setlistLauncherLabel" class="control-note">Choose songs ahead of time and just advance slides.</p>
       <button id="openSetlistEditor" class="secondary" type="button">Prepare setlist</button>
+      <div id="setlistRoller" class="setlist-roller hidden" aria-live="polite"></div>
 
       <div class="field hidden">
         <div class="section-label">Import</div>
@@ -6453,6 +6479,7 @@ Any use not expressly permitted by this license is prohibited.</pre>
       openSongbookEditor: document.getElementById("openSongbookEditor"),
       setlistLauncherLabel: document.getElementById("setlistLauncherLabel"),
       openSetlistEditor: document.getElementById("openSetlistEditor"),
+      setlistRoller: document.getElementById("setlistRoller"),
       setlistDialog: document.getElementById("setlistDialog"),
       setlistIntro: document.getElementById("setlistIntro"),
       setlistSearch: document.getElementById("setlistSearch"),
@@ -7205,7 +7232,26 @@ Any use not expressly permitted by this license is prohibited.</pre>
       els.blankSlide.setAttribute("aria-pressed", String(state.isBlank));
       els.blankSlide.textContent = state.isBlank ? t("showLyrics") : t("blank");
       updateGallerySelection();
+      renderSetlistRoller();
       renderDisplay(activeSlide, displayFontSize);
+    }
+
+    function renderSetlistRoller() {
+      els.setlistRoller.textContent = "";
+      els.setlistRoller.classList.toggle("hidden", !state.isSetlistActive);
+      if (!state.isSetlistActive) return;
+
+      for (let offset = -2; offset <= 2; offset += 1) {
+        const row = document.createElement("div");
+        const setlistIndex = state.setlistPosition + offset;
+        row.className = "setlist-roller-row";
+        if (offset === 0) row.classList.add("current");
+        if (setlistIndex >= 0 && setlistIndex < state.setlistSongIndexes.length) {
+          const songIndex = state.setlistSongIndexes[setlistIndex];
+          row.textContent = songs[songIndex]?.title || "";
+        }
+        els.setlistRoller.append(row);
+      }
     }
 
     function renderDisplay(slide, fontSize = getDisplayFontSize(slide, state.slideIndex)) {
