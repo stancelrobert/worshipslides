@@ -122,6 +122,7 @@
       display: grid;
       gap: 4px;
       margin-top: -4px;
+      perspective: 420px;
     }
 
     .setlist-roller-row {
@@ -131,13 +132,38 @@
       line-height: 1.25;
       min-height: 24px;
       overflow: hidden;
+      text-align: center;
       text-overflow: ellipsis;
+      transform-origin: center;
+      transform-style: preserve-3d;
       white-space: nowrap;
+    }
+
+    .setlist-roller-row.before-far {
+      opacity: 0.42;
+      transform: rotateX(42deg) scale(0.94) translateY(4px);
+    }
+
+    .setlist-roller-row.before-near {
+      opacity: 0.72;
+      transform: rotateX(24deg) scale(0.98) translateY(1px);
+    }
+
+    .setlist-roller-row.after-near {
+      opacity: 0.72;
+      transform: rotateX(-24deg) scale(0.98) translateY(-1px);
+    }
+
+    .setlist-roller-row.after-far {
+      opacity: 0.42;
+      transform: rotateX(-42deg) scale(0.94) translateY(-4px);
     }
 
     .setlist-roller-row.current {
       color: var(--accent);
       font-weight: 900;
+      opacity: 1;
+      transform: translateZ(18px) scale(1.02);
       text-shadow:
         0 3px 10px rgba(31, 122, 101, 0.26),
         0 10px 28px rgba(31, 122, 101, 0.24);
@@ -7245,7 +7271,11 @@ Any use not expressly permitted by this license is prohibited.</pre>
         const row = document.createElement("div");
         const setlistIndex = state.setlistPosition + offset;
         row.className = "setlist-roller-row";
+        if (offset === -2) row.classList.add("before-far");
+        if (offset === -1) row.classList.add("before-near");
         if (offset === 0) row.classList.add("current");
+        if (offset === 1) row.classList.add("after-near");
+        if (offset === 2) row.classList.add("after-far");
         if (setlistIndex >= 0 && setlistIndex < state.setlistSongIndexes.length) {
           const songIndex = state.setlistSongIndexes[setlistIndex];
           row.textContent = songs[songIndex]?.title || "";
