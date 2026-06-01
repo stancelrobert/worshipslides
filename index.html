@@ -101,6 +101,13 @@
 
     .field { display: flex; flex-direction: column; gap: 8px; }
 
+    .control-divider {
+      border: 0;
+      border-top: 1px solid var(--line);
+      margin: 2px 0;
+      width: 100%;
+    }
+
     .field label,
     .section-label {
       color: var(--muted);
@@ -1042,7 +1049,7 @@ Wszystko śpiewa Ci, Święty!</span></div>
         <p>Choose a song, set the size, and send lyrics to the projector window.</p>
       </div>
 
-      <button id="openSongbookEditor" class="secondary" type="button">Edit songbook</button>
+      <button id="openDisplay">Open audience display</button>
       <button id="openSetlistEditor" class="secondary" type="button">Prepare setlist</button>
 
       <div class="field hidden">
@@ -1066,8 +1073,6 @@ Wszystko śpiewa Ci, Święty!</span></div>
         </div>
       </div>
 
-      <button id="openDisplay">Open audience display</button>
-
       <div class="field">
         <div class="section-label">Navigation</div>
         <div class="button-row">
@@ -1077,6 +1082,10 @@ Wszystko śpiewa Ci, Święty!</span></div>
       </div>
 
       <button id="blankSlide" class="secondary" type="button" aria-pressed="false">Blank</button>
+
+      <hr class="control-divider">
+
+      <button id="openSongbookEditor" class="secondary" type="button">Edit songbook</button>
 
       <p class="hint">Tip: after opening the audience display, drag it to the external screen and use the browser fullscreen command.</p>
 
@@ -1097,7 +1106,6 @@ Wszystko śpiewa Ci, Święty!</span></div>
             <input id="songSearch" class="song-title-input" type="text" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="songResults">
             <ul id="songResults" class="song-results hidden" role="listbox"></ul>
           </div>
-          <p id="songMeta"></p>
         </div>
         <p id="splitStatus">Waiting for lyrics</p>
       </header>
@@ -6464,7 +6472,6 @@ Any use not expressly permitted by this license is prohibited.</pre>
       nextSlide: document.getElementById("nextSlide"),
       displayStatus: document.getElementById("displayStatus"),
       slideStatus: document.getElementById("slideStatus"),
-      songMeta: document.getElementById("songMeta"),
       splitStatus: document.getElementById("splitStatus"),
       previewSlide: document.getElementById("previewSlide"),
       previewText: document.getElementById("previewText"),
@@ -7160,9 +7167,6 @@ Any use not expressly permitted by this license is prohibited.</pre>
       const displayFontSize = getDisplayFontSize(activeSlide, state.slideIndex);
       const slide = state.isBlank ? "" : formatSlideText(activeSlide, displayFontSize);
       syncPreviewLayout();
-      els.songMeta.textContent = [translations.pl.localSongbook, translations.en.localSongbook].includes(song.author)
-        ? t("localSongbook")
-        : song.author;
       els.previewText.textContent = state.isBlank ? "" : (slide || t("noLyricsOnSlide"));
       els.previewText.classList.toggle("empty", !slide);
       els.previewSlide.style.fontSize = `${displayFontSize}px`;
