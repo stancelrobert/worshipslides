@@ -126,6 +126,15 @@
       position: relative;
     }
 
+    .sr-only {
+      height: 1px;
+      margin: -1px;
+      overflow: hidden;
+      position: absolute;
+      white-space: nowrap;
+      width: 1px;
+    }
+
     .song-results {
       background: white;
       border: 1px solid var(--line);
@@ -420,6 +429,7 @@
     }
 
     .stage-header {
+      align-items: start;
       border-bottom: 1px solid var(--line);
       display: flex;
       justify-content: space-between;
@@ -427,7 +437,60 @@
       padding: 18px 20px;
     }
 
-    .stage-header h2 { font-size: 1.15rem; line-height: 1.25; margin: 0; }
+    .stage-song {
+      min-width: 0;
+      width: min(560px, 100%);
+    }
+
+    .stage-song-label {
+      color: var(--muted);
+      display: block;
+      font-size: 0.76rem;
+      font-weight: 400;
+      letter-spacing: 0;
+      margin-bottom: 3px;
+      text-transform: uppercase;
+    }
+
+    .stage-song-picker {
+      margin-left: -10px;
+      max-width: 100%;
+      width: min(520px, 100%);
+    }
+
+    .stage-song .song-title-input {
+      background: transparent;
+      border-color: transparent;
+      border-radius: 6px;
+      color: var(--accent);
+      cursor: pointer;
+      font-size: 1.15rem;
+      font-weight: 800;
+      line-height: 1.25;
+      min-height: 32px;
+      padding: 0 10px;
+    }
+
+    .stage-song .song-title-input:hover,
+    .stage-song .song-title-input:focus {
+      background: transparent;
+      border-color: transparent;
+      color: var(--accent);
+      font-weight: 900;
+      text-shadow:
+        0 3px 10px rgba(31, 122, 101, 0.26),
+        0 10px 28px rgba(31, 122, 101, 0.24);
+    }
+
+    .stage-song .song-title-input:focus {
+      cursor: text;
+      outline: none;
+    }
+
+    .stage-song-picker.results-open .song-title-input {
+      border-color: var(--line);
+    }
+
     .stage-header p { color: var(--muted); margin: 4px 0 0; }
 
     .stage-body {
@@ -979,14 +1042,6 @@ Wszystko śpiewa Ci, Święty!</span></div>
         <p>Choose a song, set the size, and send lyrics to the projector window.</p>
       </div>
 
-      <div class="field">
-        <label for="songSearch">Song</label>
-        <div class="song-picker">
-          <input id="songSearch" type="text" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="songResults">
-          <ul id="songResults" class="song-results hidden" role="listbox"></ul>
-        </div>
-      </div>
-
       <button id="openSongbookEditor" class="secondary" type="button">Edit songbook</button>
       <button id="openSetlistEditor" class="secondary" type="button">Prepare setlist</button>
 
@@ -1035,8 +1090,13 @@ Wszystko śpiewa Ci, Święty!</span></div>
 
     <section class="stage panel" aria-label="Current slide preview">
       <header class="stage-header">
-        <div>
-          <h2 id="songTitle">No song selected</h2>
+        <div class="stage-song">
+          <span id="stageSongLabel" class="stage-song-label">Choose a song:</span>
+          <label id="songSearchLabel" class="sr-only" for="songSearch">Song</label>
+          <div class="song-picker stage-song-picker">
+            <input id="songSearch" class="song-title-input" type="text" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="songResults">
+            <ul id="songResults" class="song-results hidden" role="listbox"></ul>
+          </div>
           <p id="songMeta"></p>
         </div>
         <p id="splitStatus">Waiting for lyrics</p>
@@ -6142,6 +6202,7 @@ Any use not expressly permitted by this license is prohibited.</pre>
         appTitle: "Slajdy Uwielbienia",
         appIntro: "Wybierz pieśń, otwórz ekran dla projektora i wyświetl tekst uczestnikom.",
         song: "Pieśń",
+        chooseSongLabel: "Wybierz pieśń:",
         editSongbook: "Edytuj śpiewnik",
         prepareSetlist: "Chcę po prostu sterować pilotem w trakcie. Przygotuj playlistę",
         prepareSetlistTitle: "Chcę po prostu sterować pilotem w trakcie. Przygotuj playlistę",
@@ -6253,6 +6314,7 @@ Any use not expressly permitted by this license is prohibited.</pre>
         appTitle: "Worship Slides",
         appIntro: "Choose a song, set the size, and send lyrics to the projector window.",
         song: "Song",
+        chooseSongLabel: "Choose a song:",
         editSongbook: "Edit songbook",
         prepareSetlist: "Prepare setlist",
         prepareSetlistTitle: "Prepare setlist",
@@ -6356,6 +6418,7 @@ Any use not expressly permitted by this license is prohibited.</pre>
       languageEn: document.getElementById("languageEn"),
       welcomePage: document.getElementById("welcomePage"),
       startApp: document.getElementById("startApp"),
+      stageSongLabel: document.getElementById("stageSongLabel"),
       songSearch: document.getElementById("songSearch"),
       songResults: document.getElementById("songResults"),
       importPdf: document.getElementById("importPdf"),
@@ -6401,7 +6464,6 @@ Any use not expressly permitted by this license is prohibited.</pre>
       nextSlide: document.getElementById("nextSlide"),
       displayStatus: document.getElementById("displayStatus"),
       slideStatus: document.getElementById("slideStatus"),
-      songTitle: document.getElementById("songTitle"),
       songMeta: document.getElementById("songMeta"),
       splitStatus: document.getElementById("splitStatus"),
       previewSlide: document.getElementById("previewSlide"),
@@ -6474,7 +6536,8 @@ Any use not expressly permitted by this license is prohibited.</pre>
 
       setText(".brand h1", t("appTitle"));
       setText(".brand p", t("appIntro"));
-      setText('label[for="songSearch"]', t("song"));
+      els.stageSongLabel.textContent = t("chooseSongLabel");
+      setText("#songSearchLabel", t("song"));
       els.openSongbookEditor.textContent = t("editSongbook");
       els.openSetlistEditor.textContent = t("prepareSetlist");
       setText(".field.hidden .section-label", t("import"));
@@ -6499,9 +6562,6 @@ Any use not expressly permitted by this license is prohibited.</pre>
       document.querySelector(".stage")?.setAttribute("aria-label", t("previewAria"));
       document.querySelector(".slide-gallery")?.setAttribute("aria-label", t("slideGalleryAria"));
       setText(".slide-gallery-header", t("slides"));
-      if (els.songTitle.textContent === translations.pl.noSongSelected || els.songTitle.textContent === translations.en.noSongSelected) {
-        els.songTitle.textContent = t("noSongSelected");
-      }
       if (els.splitStatus.textContent === translations.pl.waitingForLyrics || els.splitStatus.textContent === translations.en.waitingForLyrics) {
         els.splitStatus.textContent = t("waitingForLyrics");
       }
@@ -7100,7 +7160,6 @@ Any use not expressly permitted by this license is prohibited.</pre>
       const displayFontSize = getDisplayFontSize(activeSlide, state.slideIndex);
       const slide = state.isBlank ? "" : formatSlideText(activeSlide, displayFontSize);
       syncPreviewLayout();
-      els.songTitle.textContent = song.title;
       els.songMeta.textContent = [translations.pl.localSongbook, translations.en.localSongbook].includes(song.author)
         ? t("localSongbook")
         : song.author;
@@ -8278,17 +8337,20 @@ Any use not expressly permitted by this license is prohibited.</pre>
     function showSongResults() {
       renderSongResults();
       els.songResults.classList.remove("hidden");
+      els.songSearch.closest(".song-picker")?.classList.add("results-open");
       els.songSearch.setAttribute("aria-expanded", "true");
     }
 
     function showAllSongResults() {
       renderSongResults("");
       els.songResults.classList.remove("hidden");
+      els.songSearch.closest(".song-picker")?.classList.add("results-open");
       els.songSearch.setAttribute("aria-expanded", "true");
     }
 
     function hideSongResults() {
       els.songResults.classList.add("hidden");
+      els.songSearch.closest(".song-picker")?.classList.remove("results-open");
       els.songSearch.setAttribute("aria-expanded", "false");
       els.songSearch.removeAttribute("aria-activedescendant");
     }
@@ -8303,6 +8365,7 @@ Any use not expressly permitted by this license is prohibited.</pre>
       recordSongPreview(state.songIndex);
       els.songSearch.value = songs[state.songIndex].title;
       hideSongResults();
+      els.songSearch.blur();
       rebuildSlides();
     }
 
@@ -8327,7 +8390,8 @@ Any use not expressly permitted by this license is prohibited.</pre>
       els.startApp.addEventListener("click", startApp);
       els.songSearch.addEventListener("focus", () => {
         showAllSongResults();
-        els.songSearch.select();
+        const titleLength = els.songSearch.value.length;
+        els.songSearch.setSelectionRange(titleLength, titleLength);
       });
       els.songSearch.addEventListener("input", () => {
         state.songResultIndex = 0;
