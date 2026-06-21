@@ -6499,6 +6499,7 @@ Any use not expressly permitted by this license is prohibited.</pre>
         editSongbook: "Edytuj śpiewnik",
         setlistLauncherLabel: "Chcę mieć pieśni wybrane z góry i po prostu przewijać slajdy:",
         prepareSetlist: "Przygotuj listę pieśni",
+        editSetlist: "Edytuj listę pieśni",
         prepareSetlistTitle: "Przygotuj listę pieśni",
         setlistIntro: "Dodaj pieśni w kolejności użycia, a potem uruchom setlistę.",
         searchSongs: "Szukaj pieśni",
@@ -6612,6 +6613,7 @@ Any use not expressly permitted by this license is prohibited.</pre>
         editSongbook: "Edit songbook",
         setlistLauncherLabel: "I want songs chosen ahead of time and just advance slides:",
         prepareSetlist: "Prepare setlist",
+        editSetlist: "Edit setlist",
         prepareSetlistTitle: "Prepare setlist",
         setlistIntro: "Add songs in the order they will be used, then start the setlist.",
         searchSongs: "Search songs",
@@ -6836,7 +6838,7 @@ Any use not expressly permitted by this license is prohibited.</pre>
       setText("#songSearchLabel", t("song"));
       els.openSongbookEditor.textContent = t("editSongbook");
       els.setlistLauncherLabel.textContent = t("setlistLauncherLabel");
-      els.openSetlistEditor.textContent = t("prepareSetlist");
+      els.openSetlistEditor.textContent = t(state.isSetlistActive ? "editSetlist" : "prepareSetlist");
       setText(".field.hidden .section-label", t("import"));
       els.importPdf.textContent = els.importPdf.classList.contains("busy") ? t("importing") : t("importPdf");
       if (els.importStatus.textContent === translations.pl.importStatusIdle || els.importStatus.textContent === translations.en.importStatusIdle) {
@@ -7479,6 +7481,7 @@ Any use not expressly permitted by this license is prohibited.</pre>
       els.nextSlide.disabled = !canGo(1);
       els.blankSlide.setAttribute("aria-pressed", String(state.isBlank));
       els.blankSlide.textContent = state.isBlank ? t("showLyrics") : t("blank");
+      els.openSetlistEditor.textContent = t(state.isSetlistActive ? "editSetlist" : "prepareSetlist");
       updateGallerySelection();
       renderSetlistRoller();
       renderDisplay(activeSlide, displayFontSize);
