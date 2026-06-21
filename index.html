@@ -123,6 +123,7 @@
       gap: 4px;
       margin-top: -4px;
       perspective: 420px;
+      overscroll-behavior: contain;
     }
 
     .setlist-roller.rolling-forward {
@@ -155,6 +156,25 @@
       transform-origin: center;
       transform-style: preserve-3d;
       white-space: nowrap;
+    }
+
+    button.setlist-roller-row {
+      background: transparent;
+      border: 0;
+      border-radius: 4px;
+      cursor: pointer;
+      padding: 0 6px;
+      width: 100%;
+    }
+
+    button.setlist-roller-row:hover {
+      background: rgba(31, 122, 101, 0.08);
+      color: var(--accent);
+    }
+
+    button.setlist-roller-row:focus-visible {
+      outline: 2px solid var(--accent);
+      outline-offset: 1px;
     }
 
     .setlist-roller-row.before-far {
@@ -6416,6 +6436,7 @@ Any use not expressly permitted by this license is prohibited.</pre>
       draggedSetlistIndex: null,
       setlistRollerPosition: null,
       setlistRollerAnimationTimer: null,
+      setlistRollerWheelTimer: null,
       songPreviewCounts: {}
     };
 
@@ -7458,17 +7479,23 @@ Any use not expressly permitted by this license is prohibited.</pre>
       }
 
       for (let offset = -2; offset <= 2; offset += 1) {
-        const row = document.createElement("div");
         const setlistIndex = state.setlistPosition + offset;
+        const hasSong = setlistIndex >= 0 && setlistIndex < state.setlistSongIndexes.length;
+        const row = document.createElement(hasSong ? "button" : "div");
         row.className = "setlist-roller-row";
+        if (hasSong) row.type = "button";
         if (offset === -2) row.classList.add("before-far");
         if (offset === -1) row.classList.add("before-near");
-        if (offset === 0) row.classList.add("current");
+        if (offset === 0) {
+          row.classList.add("current");
+          if (hasSong) row.setAttribute("aria-current", "true");
+        }
         if (offset === 1) row.classList.add("after-near");
         if (offset === 2) row.classList.add("after-far");
-        if (setlistIndex >= 0 && setlistIndex < state.setlistSongIndexes.length) {
+        if (hasSong) {
           const songIndex = state.setlistSongIndexes[setlistIndex];
           row.textContent = songs[songIndex]?.title || "";
+          row.addEventListener("click", () => goToSetlistSong(setlistIndex));
         }
         els.setlistRoller.append(row);
       }
@@ -7485,6 +7512,29 @@ Any use not expressly permitted by this license is prohibited.</pre>
           els.setlistRoller.classList.remove(animationClass);
         }, 320);
       });
+    }
+
+    function goToSetlistSong(setlistIndex) {
+      if (!state.isSetlistActive) return;
+      const targetPosition = Math.max(0, Math.min(state.setlistSongIndexes.length - 1, setlistIndex));
+      state.setlistPosition = targetPosition;
+      state.setlistTransition = null;
+      state.isBlank = false;
+      loadSongAt(state.setlistSongIndexes[targetPosition], 0);
+    }
+
+    function scrollSetlistRoller(event) {
+      if (!state.isSetlistActive) return;
+      const delta = Math.abs(event.deltaY) >= Math.abs(event.deltaX) ? event.deltaY : event.deltaX;
+      if (!delta) return;
+      event.preventDefault();
+      if (state.setlistRollerWheelTimer) return;
+      const targetPosition = state.setlistPosition + (delta > 0 ? 1 : -1);
+      if (targetPosition < 0 || targetPosition >= state.setlistSongIndexes.length) return;
+      goToSetlistSong(targetPosition);
+      state.setlistRollerWheelTimer = window.setTimeout(() => {
+        state.setlistRollerWheelTimer = null;
+      }, 280);
     }
 
     function renderDisplay(slide, fontSize = getDisplayFontSize(slide, state.slideIndex)) {
@@ -8744,6 +8794,7 @@ Any use not expressly permitted by this license is prohibited.</pre>
       els.setlistSearch.addEventListener("input", renderSetlistResults);
       els.clearSetlist.addEventListener("click", clearSetlist);
       els.startSetlist.addEventListener("click", startSetlist);
+      els.setlistRoller.addEventListener("wheel", scrollSetlistRoller, { passive: false });
       els.openSongbookEditor.addEventListener("click", openSongbookEditor);
       els.closeSongbookEditor.addEventListener("click", closeSongbookEditor);
       els.songbookDialog.addEventListener("click", event => {
