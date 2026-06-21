@@ -6416,8 +6416,23 @@ Any use not expressly permitted by this license is prohibited.</pre>
       }
 ];
 
+    const defaultSetlistTitles = [
+      "SPOCZNIJ NA NAS",
+      "JEDEN JEST BÓG I PAN",
+      "PAN WYWYŻSZONY",
+      "DO STOŁU PRZYJDŹ",
+      "NASZ BÓG JEST WIELKI",
+      "ŚWIĘTY NA ZAWSZE",
+      "WIDZĘ DOM",
+      "ZAUFAŁEM PANU"
+    ];
+
+    const defaultSetlistSongIndexes = defaultSetlistTitles
+      .map(title => songs.findIndex(song => song.title === title))
+      .filter(index => index >= 0);
+
     const state = {
-      songIndex: 0,
+      songIndex: defaultSetlistSongIndexes[0] ?? 0,
       songResultIndex: 0,
       slideFontSizes: {},
       slideRemainders: {},
@@ -6429,9 +6444,9 @@ Any use not expressly permitted by this license is prohibited.</pre>
       editingSongIndex: null,
       editingNewSong: false,
       currentLanguage: "pl",
-      setlistSongIndexes: [],
-      setlistPosition: null,
-      isSetlistActive: false,
+      setlistSongIndexes: [...defaultSetlistSongIndexes],
+      setlistPosition: defaultSetlistSongIndexes.length ? 0 : null,
+      isSetlistActive: defaultSetlistSongIndexes.length > 0,
       setlistTransition: null,
       draggedSetlistIndex: null,
       setlistRollerPosition: null,
