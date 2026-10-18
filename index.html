@@ -446,11 +446,27 @@
       max-width: 60vw;
     }
 
+    .welcome-brand-major {
+      font-size: 1em;
+    }
+
+    .welcome-brand-minor {
+      font-size: 0.66em;
+    }
+
     .welcome-copy {
       color: rgba(255, 255, 255, 0.82);
       font-size: min(2.15vw, 2.9dvh);
       line-height: 1.35;
       margin: 0;
+      max-width: 52vw;
+    }
+
+    .welcome-tagline {
+      color: rgba(255, 255, 255, 0.72);
+      font-size: min(2vw, 2.5dvh);
+      line-height: 1.25;
+      margin: -1.2dvh 0 0;
       max-width: 52vw;
     }
 
@@ -1140,7 +1156,8 @@
       }
       .welcome-content,
       .welcome h1,
-      .welcome-copy {
+      .welcome-copy,
+      .welcome-tagline {
         max-width: 90vw;
       }
       .welcome-slide:first-child {
@@ -1160,6 +1177,10 @@
         font-size: min(4.8vw, 2.7dvh);
         line-height: 1.28;
         margin-top: 1.2dvh;
+      }
+      .welcome-tagline {
+        font-size: min(4.2vw, 2.4dvh);
+        margin-top: -0.8dvh;
       }
       .welcome-actions {
         margin-top: 1.6dvh;
@@ -1186,7 +1207,8 @@ Wszystko śpiewa Ci, Święty!</span></div>
     </div>
     <div class="welcome-content">
       <p class="welcome-kicker">MocnoSercownik</p>
-      <h1>Worship slides without the weekly slide prep.</h1>
+      <h1 aria-label="WORSHIPSLIDES"><span class="welcome-brand-major">W</span><span class="welcome-brand-minor">ORSHIP</span><span class="welcome-brand-major">S</span><span class="welcome-brand-minor">LIDES</span></h1>
+      <p class="welcome-tagline">Forget preparing slides before every worship service.</p>
       <p class="welcome-copy">Imagine not having to prepare slides before every worship night. Setting font size, centering, splitting lyrics between pages... and then remembering the order of your songs during the event.</p>
       <p class="welcome-copy">All of this trouble is gone now. Choose a song, open the audience display, and keep the lyrics ready when the room starts singing.</p>
       <div class="welcome-actions">
@@ -6737,7 +6759,8 @@ Any use not expressly permitted by this license is prohibited.</pre>
         previewAria: "Podgląd bieżącego slajdu",
         slideGalleryAria: "Galeria slajdów",
         fontSizePixels: "Rozmiar czcionki w pikselach",
-        welcomeTitle: "Zapomnij o układaniu slajdów przed każdym uwielbieniem.",
+        welcomeTitle: "WORSHIPSLIDES",
+        welcomeTagline: "Zapomnij o układaniu slajdów przed każdym uwielbieniem.",
         welcomeCopy1: "Ustawianie rozmiaru czcionki, centrowanie, dzielenie tekstu między strony... a potem pamiętanie kolejności pieśni podczas wydarzenia.",
         welcomeCopy2: "To już przeszłość. Wybierz pieśń, otwórz ekran dla uczestników i pozwól sobie skupić się na modlitwie!",
         startNow: "Zaczynamy",
@@ -6851,7 +6874,8 @@ Any use not expressly permitted by this license is prohibited.</pre>
         previewAria: "Current slide preview",
         slideGalleryAria: "Slide gallery",
         fontSizePixels: "Font size in pixels",
-        welcomeTitle: "Worship slides without the weekly slide prep.",
+        welcomeTitle: "WORSHIPSLIDES",
+        welcomeTagline: "Forget preparing slides before every worship service.",
         welcomeCopy1: "Imagine not having to prepare slides before every worship night. Setting font size, centering, splitting lyrics between pages... and then remembering the order of your songs during the event.",
         welcomeCopy2: "All of this trouble is gone now. Choose a song, open the audience display, and keep the lyrics ready when the room starts singing.",
         startNow: "Start now",
@@ -7076,7 +7100,7 @@ Any use not expressly permitted by this license is prohibited.</pre>
       els.languageEn.setAttribute("aria-pressed", String(state.currentLanguage === "en"));
 
       const welcomeCopies = document.querySelectorAll(".welcome-copy");
-      setText(".welcome h1", t("welcomeTitle"));
+      setText(".welcome-tagline", t("welcomeTagline"));
       if (welcomeCopies[0]) welcomeCopies[0].textContent = t("welcomeCopy1");
       if (welcomeCopies[1]) welcomeCopies[1].textContent = t("welcomeCopy2");
       els.startApp.textContent = t("startNow");
@@ -7738,7 +7762,13 @@ Any use not expressly permitted by this license is prohibited.</pre>
     }
 
     function getVisibleSlides() {
-      return [songs[state.songIndex]?.title || "", ...state.slides];
+      const slides = [songs[state.songIndex]?.title || "", ...state.slides];
+      if (state.isSetlistActive) slides.push("");
+      return slides;
+    }
+
+    function isSetlistBlankSlide(index = state.slideIndex) {
+      return state.isSetlistActive && index === getVisibleSlides().length - 1;
     }
 
     function getActiveSlide() {
@@ -7750,9 +7780,10 @@ Any use not expressly permitted by this license is prohibited.</pre>
       const visibleSlides = getVisibleSlides();
       const activeSlide = visibleSlides[state.slideIndex] || "";
       const displayFontSize = getDisplayFontSize(activeSlide, state.slideIndex);
-      const slide = state.isBlank ? "" : formatSlideText(activeSlide, displayFontSize);
+      const isBlank = state.isBlank || isSetlistBlankSlide();
+      const slide = isBlank ? "" : formatSlideText(activeSlide, displayFontSize);
       syncPreviewLayout();
-      els.previewText.textContent = state.isBlank ? "" : (slide || t("noLyricsOnSlide"));
+      els.previewText.textContent = isBlank ? "" : (slide || t("noLyricsOnSlide"));
       els.previewText.classList.toggle("empty", !slide);
       els.previewSlide.style.fontSize = `${displayFontSize}px`;
       updatePreviewScale();
@@ -7772,12 +7803,14 @@ Any use not expressly permitted by this license is prohibited.</pre>
         });
       els.prevSlide.disabled = !canGo(-1);
       els.nextSlide.disabled = !canGo(1);
-      els.blankSlide.setAttribute("aria-pressed", String(state.isBlank));
-      els.blankSlide.textContent = state.isBlank ? t("showLyrics") : t("blank");
+      els.blankSlide.setAttribute("aria-pressed", String(isBlank));
+      els.blankSlide.textContent = isBlank ? t("showLyrics") : t("blank");
       els.openSetlistEditor.textContent = t(state.isSetlistActive ? "editSetlist" : "prepareSetlist");
       updateGallerySelection();
       renderSetlistRoller();
-      renderDisplay(activeSlide, displayFontSize);
+      // The inter-song blank is a real rendered state, so the audience display
+      // clears immediately instead of waiting for the periodic sync.
+      renderDisplay(isBlank ? "" : activeSlide, displayFontSize);
     }
 
     function renderSetlistRoller() {
@@ -7908,9 +7941,10 @@ Any use not expressly permitted by this license is prohibited.</pre>
         button.className = "slide-thumb";
         button.dataset.slideIndex = String(index);
         button.setAttribute("aria-label", t("slideAria", { number: index + 1 }));
+        if (isSetlistBlankSlide(index)) button.classList.add("blank-slide-thumb");
 
         label.className = "slide-thumb-label";
-        label.textContent = getSlideThumbnailTitle(slide);
+        label.textContent = isSetlistBlankSlide(index) ? t("blank") : getSlideThumbnailTitle(slide);
 
         frame.className = "slide-thumb-frame";
         content.className = "slide-thumb-content";
@@ -8232,46 +8266,24 @@ Any use not expressly permitted by this license is prohibited.</pre>
     }
 
     function go(delta) {
-      if (state.isSetlistActive && state.setlistTransition) {
-        const transition = state.setlistTransition;
-        const shouldEnterTarget = delta > 0
-          ? transition.targetPosition > transition.fromPosition
-          : transition.targetPosition < transition.fromPosition;
-        const position = shouldEnterTarget ? transition.targetPosition : transition.fromPosition;
-        const slideIndex = shouldEnterTarget ? transition.targetSlideIndex : transition.fromSlideIndex;
-        state.setlistPosition = position;
-        state.setlistTransition = null;
-        state.isBlank = false;
-        loadSongAt(state.setlistSongIndexes[position], slideIndex);
-        return;
-      }
-
       const visibleSlideCount = getVisibleSlides().length;
 
       if (delta > 0 && state.slideIndex >= visibleSlideCount - 1 && state.isSetlistActive) {
         if (state.setlistPosition < state.setlistSongIndexes.length - 1) {
-          state.setlistTransition = {
-            fromPosition: state.setlistPosition,
-            fromSlideIndex: state.slideIndex,
-            targetPosition: state.setlistPosition + 1,
-            targetSlideIndex: 0
-          };
-          state.isBlank = true;
-          render();
+          state.setlistPosition += 1;
+          state.setlistTransition = null;
+          state.isBlank = false;
+          loadSongAt(state.setlistSongIndexes[state.setlistPosition], 0);
           return;
         }
       }
 
       if (delta < 0 && state.slideIndex <= 0 && state.isSetlistActive) {
         if (state.setlistPosition > 0) {
-          state.setlistTransition = {
-            fromPosition: state.setlistPosition,
-            fromSlideIndex: state.slideIndex,
-            targetPosition: state.setlistPosition - 1,
-            targetSlideIndex: Number.MAX_SAFE_INTEGER
-          };
-          state.isBlank = true;
-          render();
+          state.setlistPosition -= 1;
+          state.setlistTransition = null;
+          state.isBlank = false;
+          loadSongAt(state.setlistSongIndexes[state.setlistPosition], Number.MAX_SAFE_INTEGER);
           return;
         }
       }
