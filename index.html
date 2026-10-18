@@ -6267,7 +6267,12 @@ Any use not expressly permitted by this license is prohibited.</pre>
                               "Pan jest dobrym pasterzem",
                               "Życie złożył za świat, za swój lud",
                               "On zgromadził narody w jeden dom",
-                              "Jedną wiarę dał nam",
+                              "Jedną wiarę dał nam"
+                        ]
+                  },
+                  {
+                        "label": "Verse 1b",
+                        "lines": [
                               "Pan zbudował świątynię",
                               "Wiary skałą umocnił jej próg",
                               "Ustanowił pasterzy",
@@ -6289,9 +6294,14 @@ Any use not expressly permitted by this license is prohibited.</pre>
                         "label": "Verse 2",
                         "lines": [
                               "Obdarował Dwunastu",
-                              "Wskazał Piotr, powierzył mu klucz",
+                              "Wskazał Piotra, powierzył mu klucz",
                               "By otwarli Królestwo,",
-                              "W którym ciemność nie znaczy już nic",
+                              "W którym ciemność nie znaczy już nic"
+                        ]
+                  },
+                  {
+                        "label": "Verse 2b",
+                        "lines": [
                               "Zanim wyszli na drogi",
                               "Szumem wichru napełnił ich dom",
                               "Dał im Ducha by mogli",
@@ -6964,12 +6974,12 @@ Any use not expressly permitted by this license is prohibited.</pre>
     }
 
     function handleNavigationKey(event) {
-      if (event.key === "ArrowRight" || event.key === "PageDown" || event.key === " ") {
+      if (event.key === "ArrowRight" || event.key === "ArrowDown" || event.key === "PageDown" || event.key === " ") {
         event.preventDefault();
         go(1);
         return true;
       }
-      if (event.key === "ArrowLeft" || event.key === "PageUp") {
+      if (event.key === "ArrowLeft" || event.key === "ArrowUp" || event.key === "PageUp") {
         event.preventDefault();
         go(-1);
         return true;
