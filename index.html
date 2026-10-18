@@ -197,6 +197,16 @@
       transform: rotateX(-42deg) scale(0.94) translateY(-4px);
     }
 
+    .setlist-roller-row.before-farthest {
+      opacity: 0.24;
+      transform: rotateX(56deg) scale(0.9) translateY(7px);
+    }
+
+    .setlist-roller-row.after-farthest {
+      opacity: 0.24;
+      transform: rotateX(-56deg) scale(0.9) translateY(-7px);
+    }
+
     .setlist-roller-row.current {
       background: rgba(111, 143, 104, 0.16);
       opacity: 1;
@@ -6458,6 +6468,95 @@ Any use not expressly permitted by this license is prohibited.</pre>
                         ]
                   }
             ]
+      },
+      {
+            "title": "HOSANNA (DZIŚ WIDZĘ KRÓLA CHWAŁY)",
+            "sections": [
+                  {
+                        "label": "Verse 1",
+                        "lines": [
+                              "Dziś widzę Króla chwały",
+                              "Lśni w obłoku Jego tron",
+                              "Zatrzymał się olśniony świat",
+                              "Dziś czuję Jego miłość",
+                              "Czuję, jak obmywa mnie",
+                              "Dlatego chcę, zaśpiewać chcę"
+                        ]
+                  },
+                  {
+                        "label": "Chorus",
+                        "lines": [
+                              "Hosanna, Hosanna!",
+                              "Hosanna na niebiosach! /x2"
+                        ]
+                  },
+                  {
+                        "label": "Verse 2",
+                        "lines": [
+                              "Oto są nowi ludzie",
+                              "wznoszą w górę ręce swe",
+                              "by uwielbić Cię, uwielbiać Cię",
+                              "Dziś czuję Ducha powiew",
+                              "serce śpiewa Panu hymn",
+                              "ze wszystkich sił, ze wszystkich sił"
+                        ]
+                  },
+                  {
+                        "label": "Bridge",
+                        "lines": [
+                              "Proszę, Panie oczyść mnie",
+                              "Przemień serca głaz, bym nie ranił Cię",
+                              "Naucz Panie dostrzec tych najmniejszych",
+                              "Składam siebie przed Twój krzyż",
+                              "Twego Raju smak chcę poznawać dziś",
+                              "Niech nie słabnę w drodze do wieczności bram"
+                        ]
+                  },
+                  {
+                        "label": "Chorus 2",
+                        "lines": [
+                              "Hosanna, Hosanna!",
+                              "Hosanna na niebiosach! /x2"
+                        ]
+                  }
+            ]
+      },
+      {
+            "title": "W RĘKACH TWYCH (TAK DOBRZE MI)",
+            "sections": [
+                  {
+                        "label": "Verse 1",
+                        "lines": [
+                              "Tak dobrze mi przy Tobie być.",
+                              "Nie zmieniasz się, Twa miłość trwa,",
+                              "jest w sercu mym"
+                        ]
+                  },
+                  {
+                        "label": "Chorus",
+                        "lines": [
+                              "Tak blisko mnie, ja wierzę, Ty trzymasz",
+                              "mnie w rękach Twych i nie upuścisz (nie)"
+                        ]
+                  },
+                  {
+                        "label": "Verse 2",
+                        "lines": [
+                              "Przychodzisz tu, by ze mną być,",
+                              "prowadzisz mnie za rękę,",
+                              "bo znalazłeś mnie."
+                        ]
+                  },
+                  {
+                        "label": "Bridge",
+                        "lines": [
+                              "Cały czas byłeś tak blisko,",
+                              "całe me życie co dnia.",
+                              "Nawet gdy nie widzę Cię,",
+                              "jesteś wciąż, bliżej wciąż"
+                        ]
+                  }
+            ]
       }
 ];
 
@@ -6468,7 +6567,9 @@ Any use not expressly permitted by this license is prohibited.</pre>
       "MÓW DO MNIE PANIE",
       "UMIŁOWANY",
       "ŚWIĘTY NA ZAWSZE",
-      "JEDEN JEST BÓG I PAN"
+      "JEDEN JEST BÓG I PAN",
+      "HOSANNA (DZIŚ WIDZĘ KRÓLA CHWAŁY)",
+      "W RĘKACH TWYCH (TAK DOBRZE MI)"
     ];
 
     const defaultSetlistSongIndexes = defaultSetlistTitles
@@ -7461,19 +7562,63 @@ Any use not expressly permitted by this license is prohibited.</pre>
 
     function splitLinesToSlides(lines, measure, maxHeight, fontSize) {
       let current = [];
-      const slides = [];
+      const greedySlides = [];
 
       for (const line of lines) {
         const candidate = current.concat(line);
         if (fits(candidate, measure, maxHeight, fontSize) || current.length === 0) {
           current = candidate;
         } else {
-          slides.push(current.join("\n"));
+          greedySlides.push(current);
           current = [line];
         }
       }
 
-      if (current.length) slides.push(current.join("\n"));
+      if (current.length) greedySlides.push(current);
+      if (greedySlides.length <= 1) return greedySlides.map(slide => slide.join("\n"));
+
+      const slideCount = greedySlides.length;
+      const memo = new Map();
+      const canPartition = (start, remainingSlides) => {
+        const key = `${start}:${remainingSlides}`;
+        if (memo.has(key)) return memo.get(key);
+        if (remainingSlides === 1) {
+          const result = fits(lines.slice(start), measure, maxHeight, fontSize);
+          memo.set(key, result);
+          return result;
+        }
+
+        const maxEnd = lines.length - (remainingSlides - 1);
+        for (let end = start + 1; end <= maxEnd; end += 1) {
+          if (fits(lines.slice(start, end), measure, maxHeight, fontSize)
+            && canPartition(end, remainingSlides - 1)) {
+            memo.set(key, true);
+            return true;
+          }
+        }
+
+        memo.set(key, false);
+        return false;
+      };
+
+      const slides = [];
+      let start = 0;
+      for (let slideIndex = 0; slideIndex < slideCount - 1; slideIndex += 1) {
+        const remainingSlides = slideCount - slideIndex;
+        const maxEnd = lines.length - (remainingSlides - 1);
+        const idealEnd = start + Math.ceil((lines.length - start) / remainingSlides);
+        const candidates = [];
+        for (let end = start + 1; end <= maxEnd; end += 1) candidates.push(end);
+        candidates.sort((left, right) => Math.abs(left - idealEnd) - Math.abs(right - idealEnd));
+        const end = candidates.find(candidate => (
+          fits(lines.slice(start, candidate), measure, maxHeight, fontSize)
+          && canPartition(candidate, remainingSlides - 1)
+        )) ?? idealEnd;
+        slides.push(lines.slice(start, end).join("\n"));
+        start = end;
+      }
+
+      slides.push(lines.slice(start).join("\n"));
       return slides;
     }
 
@@ -7552,13 +7697,14 @@ Any use not expressly permitted by this license is prohibited.</pre>
       state.setlistRollerViewActivePosition = state.setlistPosition;
       const rollerPosition = state.setlistRollerViewPosition;
 
-      for (let offset = -2; offset <= 2; offset += 1) {
+      for (let offset = -3; offset <= 3; offset += 1) {
         const setlistIndex = rollerPosition + offset;
         const hasSong = setlistIndex >= 0 && setlistIndex < state.setlistSongIndexes.length;
         const row = document.createElement(hasSong ? "button" : "div");
         row.className = "setlist-roller-row";
         if (hasSong) row.type = "button";
         if (offset === -2) row.classList.add("before-far");
+        if (offset === -3) row.classList.add("before-farthest");
         if (offset === -1) row.classList.add("before-near");
         if (offset === 0) {
           row.classList.add("current");
@@ -7569,6 +7715,7 @@ Any use not expressly permitted by this license is prohibited.</pre>
         }
         if (offset === 1) row.classList.add("after-near");
         if (offset === 2) row.classList.add("after-far");
+        if (offset === 3) row.classList.add("after-farthest");
         if (hasSong) {
           const songIndex = state.setlistSongIndexes[setlistIndex];
           row.textContent = songs[songIndex]?.title || "";
