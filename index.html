@@ -6,15 +6,15 @@
   <title>Worship Slides</title>
   <style>
     :root {
-      color-scheme: light;
-      --bg: #f6f7f8;
-      --panel: #fff;
-      --text: #1d252c;
-      --muted: #66717d;
-      --line: #d8dee5;
-      --accent: #1f7a65;
-      --accent-strong: #155f4d;
-      --shadow: 0 16px 42px rgba(26, 38, 51, 0.12);
+      color-scheme: dark;
+      --bg: #101417;
+      --panel: #1b2328;
+      --text: #edf3f1;
+      --muted: #9aa8ad;
+      --line: #39464d;
+      --accent: #6f8f68;
+      --accent-strong: #8eaa82;
+      --shadow: 0 16px 42px rgba(0, 0, 0, 0.32);
     }
 
     * { box-sizing: border-box; }
@@ -127,11 +127,11 @@
     }
 
     .setlist-roller.rolling-forward {
-      animation: setlistRollForward 0.28s ease-out;
+      animation: setlistRollForward 0.16s ease-out;
     }
 
     .setlist-roller.rolling-backward {
-      animation: setlistRollBackward 0.28s ease-out;
+      animation: setlistRollBackward 0.16s ease-out;
     }
 
     @keyframes setlistRollForward {
@@ -168,7 +168,7 @@
     }
 
     button.setlist-roller-row:hover {
-      background: rgba(31, 122, 101, 0.08);
+      background: rgba(111, 143, 104, 0.15);
       color: var(--accent);
     }
 
@@ -198,13 +198,18 @@
     }
 
     .setlist-roller-row.current {
+      background: rgba(111, 143, 104, 0.16);
+      opacity: 1;
+      transform: translateZ(18px) scale(1.02);
+    }
+
+    .setlist-roller-row.active {
       color: var(--accent);
       font-weight: 900;
       opacity: 1;
-      transform: translateZ(18px) scale(1.02);
       text-shadow:
-        0 3px 10px rgba(31, 122, 101, 0.26),
-        0 10px 28px rgba(31, 122, 101, 0.24);
+        0 3px 10px rgba(111, 143, 104, 0.3),
+        0 10px 28px rgba(111, 143, 104, 0.24);
     }
 
     .field label,
@@ -224,7 +229,7 @@
       padding: 0 12px;
       border: 1px solid var(--line);
       border-radius: 8px;
-      background: white;
+      background: #202a30;
       color: var(--text);
     }
 
@@ -242,7 +247,7 @@
     }
 
     .song-results {
-      background: white;
+      background: #202a30;
       border: 1px solid var(--line);
       border-radius: 8px;
       box-shadow: var(--shadow);
@@ -269,7 +274,7 @@
 
     .song-result:hover,
     .song-result[aria-selected="true"] {
-      background: #edf1f3;
+      background: #2a353c;
     }
 
     .song-result-empty {
@@ -326,8 +331,8 @@
 
     .hidden { display: none !important; }
 
-    .secondary { background: white; border-color: var(--line); color: var(--text); }
-    .secondary:hover { background: #edf1f3; }
+    .secondary { background: #202a30; border-color: var(--line); color: var(--text); }
+    .secondary:hover { background: #2a353c; }
 
     body.welcome-active .shell {
       pointer-events: none;
@@ -584,8 +589,8 @@
       color: var(--accent);
       font-weight: 900;
       text-shadow:
-        0 3px 10px rgba(31, 122, 101, 0.26),
-        0 10px 28px rgba(31, 122, 101, 0.24);
+        0 3px 10px rgba(111, 143, 104, 0.3),
+        0 10px 28px rgba(111, 143, 104, 0.24);
     }
 
     .stage-song .song-title-input:focus {
@@ -611,7 +616,7 @@
       place-items: center;
       min-height: 0;
       padding: 20px;
-      background: #eef2f4;
+      background: #151c20;
     }
 
     .preview {
@@ -645,6 +650,12 @@
       width: 1280px;
     }
 
+    .preview-slide,
+    .measure-text,
+    .slide-thumb-content {
+      font-family: Arial, Helvetica, sans-serif;
+    }
+
     .measure-text {
       font-weight: 700;
       left: -200vw;
@@ -662,7 +673,7 @@
 
     .slide-gallery {
       border-left: 1px solid var(--line);
-      background: #f8fafb;
+      background: #161e23;
       display: flex;
       flex-direction: column;
       min-height: 0;
@@ -688,7 +699,7 @@
     }
 
     .slide-thumb {
-      background: white;
+      background: #202a30;
       border: 2px solid transparent;
       border-radius: 8px;
       color: var(--text);
@@ -759,7 +770,7 @@
 
     .dialog-backdrop {
       align-items: center;
-      background: rgba(20, 28, 35, 0.52);
+      background: rgba(0, 0, 0, 0.68);
       display: flex;
       inset: 0;
       justify-content: center;
@@ -769,7 +780,7 @@
     }
 
     .dialog {
-      background: white;
+      background: var(--panel);
       border: 1px solid var(--line);
       border-radius: 8px;
       box-shadow: var(--shadow);
@@ -837,7 +848,7 @@
     }
 
     .songbook-card {
-      background: white;
+      background: #202a30;
       border: 1px solid var(--line);
       border-radius: 8px;
       color: var(--text);
@@ -847,16 +858,16 @@
     }
 
     .songbook-card:hover {
-      background: #edf1f3;
+      background: #2a353c;
     }
 
     .songbook-card-add {
-      background: #e9f4f0;
-      border-color: rgba(31, 122, 101, 0.35);
+      background: #283426;
+      border-color: rgba(111, 143, 104, 0.45);
     }
 
     .songbook-card-add:hover {
-      background: #dceee8;
+      background: #3c5339;
     }
 
     .setlist-search {
@@ -907,7 +918,7 @@
 
     .setlist-card {
       align-items: center;
-      background: white;
+      background: #202a30;
       border: 1px solid var(--line);
       border-radius: 8px;
       color: var(--text);
@@ -927,7 +938,7 @@
 
     .setlist-card.drag-over {
       border-color: var(--accent);
-      box-shadow: inset 0 0 0 2px rgba(31, 122, 101, 0.24);
+      box-shadow: inset 0 0 0 2px rgba(111, 143, 104, 0.3);
     }
 
     .setlist-card strong,
@@ -974,7 +985,7 @@
     }
 
     .back-button {
-      background: white;
+      background: #202a30;
       border-color: var(--line);
       color: var(--text);
       min-width: 42px;
@@ -6433,18 +6444,31 @@ Any use not expressly permitted by this license is prohibited.</pre>
                         ]
                   }
             ]
+      },
+      {
+            "title": "NIECHAJ MIŁOŚĆ TWA",
+            "sections": [
+                  {
+                        "label": "Song",
+                        "lines": [
+                              "Niechaj miłość Twa",
+                              "jak potężna fala",
+                              "Spłynie tu przez łaski Twej zdrój",
+                              "Chryste dotknij mnie."
+                        ]
+                  }
+            ]
       }
 ];
 
     const defaultSetlistTitles = [
-      "SPOCZNIJ NA NAS",
-      "JEDEN JEST BÓG I PAN",
-      "PAN WYWYŻSZONY",
-      "DO STOŁU PRZYJDŹ",
-      "NASZ BÓG JEST WIELKI",
+      "WZYWAM CIĘ",
+      "DUCHU ŚWIĘTY TCHNIENIE OJCA",
+      "TWOJA MIŁOŚĆ",
+      "MÓW DO MNIE PANIE",
+      "UMIŁOWANY",
       "ŚWIĘTY NA ZAWSZE",
-      "WIDZĘ DOM",
-      "ZAUFAŁEM PANU"
+      "JEDEN JEST BÓG I PAN"
     ];
 
     const defaultSetlistSongIndexes = defaultSetlistTitles
@@ -6470,8 +6494,12 @@ Any use not expressly permitted by this license is prohibited.</pre>
       setlistTransition: null,
       draggedSetlistIndex: null,
       setlistRollerPosition: null,
+      setlistRollerViewPosition: null,
+      setlistRollerViewActivePosition: null,
       setlistRollerAnimationTimer: null,
       setlistRollerWheelTimer: null,
+      setlistRollerAnimationDuration: 280,
+      setlistRollerLastWheelTime: 0,
       songPreviewCounts: {}
     };
 
@@ -7513,11 +7541,19 @@ Any use not expressly permitted by this license is prohibited.</pre>
       els.setlistRoller.classList.toggle("hidden", !state.isSetlistActive);
       if (!state.isSetlistActive) {
         state.setlistRollerPosition = null;
+        state.setlistRollerViewPosition = null;
         return;
       }
 
+      if (state.setlistRollerViewPosition === null
+        || state.setlistRollerViewActivePosition !== state.setlistPosition) {
+        state.setlistRollerViewPosition = state.setlistPosition;
+      }
+      state.setlistRollerViewActivePosition = state.setlistPosition;
+      const rollerPosition = state.setlistRollerViewPosition;
+
       for (let offset = -2; offset <= 2; offset += 1) {
-        const setlistIndex = state.setlistPosition + offset;
+        const setlistIndex = rollerPosition + offset;
         const hasSong = setlistIndex >= 0 && setlistIndex < state.setlistSongIndexes.length;
         const row = document.createElement(hasSong ? "button" : "div");
         row.className = "setlist-roller-row";
@@ -7526,7 +7562,10 @@ Any use not expressly permitted by this license is prohibited.</pre>
         if (offset === -1) row.classList.add("before-near");
         if (offset === 0) {
           row.classList.add("current");
-          if (hasSong) row.setAttribute("aria-current", "true");
+        }
+        if (hasSong && setlistIndex === state.setlistPosition) {
+          row.classList.add("active");
+          row.setAttribute("aria-current", "true");
         }
         if (offset === 1) row.classList.add("after-near");
         if (offset === 2) row.classList.add("after-far");
@@ -7539,16 +7578,18 @@ Any use not expressly permitted by this license is prohibited.</pre>
       }
 
       const previousPosition = state.setlistRollerPosition;
-      state.setlistRollerPosition = state.setlistPosition;
-      if (previousPosition === null || previousPosition === state.setlistPosition) return;
+      state.setlistRollerPosition = rollerPosition;
+      if (previousPosition === null || previousPosition === rollerPosition) return;
 
-      const animationClass = state.setlistPosition > previousPosition ? "rolling-forward" : "rolling-backward";
+      const animationClass = rollerPosition > previousPosition ? "rolling-forward" : "rolling-backward";
       window.clearTimeout(state.setlistRollerAnimationTimer);
       window.requestAnimationFrame(() => {
+        els.setlistRoller.style.animationDuration = `${state.setlistRollerAnimationDuration}ms`;
         els.setlistRoller.classList.add(animationClass);
         state.setlistRollerAnimationTimer = window.setTimeout(() => {
           els.setlistRoller.classList.remove(animationClass);
-        }, 320);
+          els.setlistRoller.style.animationDuration = "";
+        }, state.setlistRollerAnimationDuration + 30);
       });
     }
 
@@ -7556,6 +7597,10 @@ Any use not expressly permitted by this license is prohibited.</pre>
       if (!state.isSetlistActive) return;
       const targetPosition = Math.max(0, Math.min(state.setlistSongIndexes.length - 1, setlistIndex));
       state.setlistPosition = targetPosition;
+      state.setlistRollerViewPosition = targetPosition;
+      state.setlistRollerViewActivePosition = targetPosition;
+      state.setlistRollerAnimationDuration = 280;
+      state.setlistRollerLastWheelTime = 0;
       state.setlistTransition = null;
       state.isBlank = false;
       loadSongAt(state.setlistSongIndexes[targetPosition], 0);
@@ -7566,13 +7611,23 @@ Any use not expressly permitted by this license is prohibited.</pre>
       const delta = Math.abs(event.deltaY) >= Math.abs(event.deltaX) ? event.deltaY : event.deltaX;
       if (!delta) return;
       event.preventDefault();
+      const now = performance.now();
+      const elapsed = state.setlistRollerLastWheelTime
+        ? Math.max(1, now - state.setlistRollerLastWheelTime)
+        : 100;
+      state.setlistRollerLastWheelTime = now;
       if (state.setlistRollerWheelTimer) return;
-      const targetPosition = state.setlistPosition + (delta > 0 ? 1 : -1);
+      const targetPosition = state.setlistRollerViewPosition + (delta > 0 ? 1 : -1);
       if (targetPosition < 0 || targetPosition >= state.setlistSongIndexes.length) return;
-      goToSetlistSong(targetPosition);
+      const distanceSpeed = Math.min(80, Math.abs(delta) * 4);
+      const frequencySpeed = Math.min(160, (Math.abs(delta) / elapsed) * 180);
+      const speed = Math.min(190, distanceSpeed + frequencySpeed);
+      state.setlistRollerAnimationDuration = Math.round(280 - speed);
+      state.setlistRollerViewPosition = targetPosition;
+      renderSetlistRoller();
       state.setlistRollerWheelTimer = window.setTimeout(() => {
         state.setlistRollerWheelTimer = null;
-      }, 280);
+      }, Math.max(120, state.setlistRollerAnimationDuration * 0.75));
     }
 
     function renderDisplay(slide, fontSize = getDisplayFontSize(slide, state.slideIndex)) {
