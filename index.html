@@ -6707,6 +6707,7 @@ Any use not expressly permitted by this license is prohibited.</pre>
       slideIndex: 0,
       slides: [],
       displayWindow: null,
+      screenWakeLock: null,
       pendingImport: [],
       editingSongIndex: null,
       editingNewSong: false,
@@ -6796,7 +6797,7 @@ Any use not expressly permitted by this license is prohibited.</pre>
         next: "Następny",
         blank: "Pusty slajd",
         showLyrics: "Pokaż tekst",
-        tip: "Wskazówka: po otwarciu ekranu dla uczestników przeciągnij go na ekran zewnętrzny i użyj pełnego ekranu w przeglądarce.",
+        tip: "Wskazówka: po otwarciu ekranu dla uczestników przeciągnij go na ekran zewnętrzny i użyj pełnego ekranu w przeglądarce. Jeśli przeglądarka obsługuje blokadę ekranu, aplikacja poprosi o utrzymanie ekranu włączonego.",
         displayClosed: "Ekran zamknięty",
         displayOpen: "Ekran otwarty",
         popupBlocked: "Popup zablokowany",
@@ -6911,7 +6912,7 @@ Any use not expressly permitted by this license is prohibited.</pre>
         next: "Next",
         blank: "Blank",
         showLyrics: "Show lyrics",
-        tip: "Tip: after opening the audience display, drag it to the external screen and use the browser fullscreen command.",
+        tip: "Tip: after opening the audience display, drag it to the external screen and use browser fullscreen. If supported, the app will request a screen wake lock.",
         displayClosed: "Display closed",
         displayOpen: "Display open",
         popupBlocked: "Popup blocked",
@@ -7226,6 +7227,26 @@ Any use not expressly permitted by this license is prohibited.</pre>
       return state.displayWindow.document;
     }
 
+    async function requestScreenWakeLock() {
+      if (!("wakeLock" in navigator) || document.visibilityState !== "visible") return;
+      if (state.screenWakeLock) return;
+      try {
+        const wakeLock = await navigator.wakeLock.request("screen");
+        state.screenWakeLock = wakeLock;
+        wakeLock.addEventListener("release", () => {
+          if (state.screenWakeLock === wakeLock) state.screenWakeLock = null;
+        });
+      } catch {
+        // Wake Lock is optional; the audience display still works without it.
+      }
+    }
+
+    function releaseScreenWakeLock() {
+      const wakeLock = state.screenWakeLock;
+      state.screenWakeLock = null;
+      if (wakeLock) wakeLock.release().catch(() => {});
+    }
+
     function handleNavigationKey(event) {
       if (event.key === "ArrowRight" || event.key === "ArrowDown" || event.key === "PageDown" || event.key === " ") {
         event.preventDefault();
@@ -7259,6 +7280,7 @@ Any use not expressly permitted by this license is prohibited.</pre>
         bindDisplayKeyboardControls();
       }
       state.displayWindow.focus();
+      requestScreenWakeLock();
       rebuildSlides();
     }
 
@@ -9195,10 +9217,16 @@ Any use not expressly permitted by this license is prohibited.</pre>
         updateGalleryScale();
         if (!getDisplayDocument()) rebuildSlides();
       }, 120));
+      document.addEventListener("visibilitychange", () => {
+        if (document.visibilityState === "visible" && getDisplayDocument()) {
+          requestScreenWakeLock();
+        }
+      });
 
       rebuildSlides();
       applyLanguage();
       setInterval(() => {
+        if (!getDisplayDocument()) releaseScreenWakeLock();
         const slide = state.isBlank ? "" : getActiveSlide();
         renderDisplay(slide);
       }, 1000);
